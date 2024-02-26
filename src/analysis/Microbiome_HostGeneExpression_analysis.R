@@ -14,7 +14,7 @@ library(decoupleR)
 
 
 source(here("src","analysis","functions_analysis.R"))
-source(here("src","plotting","functions_plotting.R"))
+#source(here("src","plotting","functions_plotting.R"))
 
 #* Import corrected rel. abundance matrix ----
 meta_combined_df <- read_tsv(here("data","metadata","meta_combined_HCC-meta-analysis.tsv"))
@@ -116,7 +116,7 @@ stopifnot(rownames(meta_randomEff_df) == colnames(test_mat_genus_l10))
 #* Run the testing for total bacteria and inflammation status ----
 # If possible, run on a compute cluster since this consumes a lot of resources: 1 linear (mixed) model per gene and comparison
 nrow(test_mat1) * nrow(host_gene_expression_mat_l10)
-n_cores = 6
+n_cores = 15
 
 # Generate vector that indicates which rows in test_mat1 are continuous and which are categorical
 cont_or_cat_vec <- case_when(
@@ -177,7 +177,7 @@ saveRDS(test_res_sampleMetrics_clean_df, here("data","results","genes_vs_sampleM
 #*  Run the testing for every combination of genus abundance and gene expression ----
 
 nrow(test_mat_genus_l10) * nrow(host_gene_expression_mat_l10)
-n_cores = 6
+n_cores = 12
 
 # all genus rel. abundances are continuous
 cont_or_cat_vec_genus <- rep("continuous", nrow(test_mat_genus_l10))
@@ -185,14 +185,14 @@ cont_or_cat_vec_genus <- rep("continuous", nrow(test_mat_genus_l10))
 test_res_genus_df <-
   f_run_linear_models_parallel(
     dset_name = "HostGenes_vs_Genera",
-    mat1 = test_mat_genus_l10[1,,drop=F],
+    mat1 = test_mat_genus_l10[,,drop=F],
     mat2 = host_gene_expression_mat_l10,
     meta = meta_randomEff_df,
     random_effect_variable = "Batch", 
     threshold_for_prev = -2, # Set to pseudocount, prevalence will always be one (prevalence will be counted for genes which does not make sense anyways)
     n_cores_max = n_cores,
     compute_CI = FALSE,
-    cont_or_cat_vec = cont_or_cat_vec_genus[1]
+    cont_or_cat_vec = cont_or_cat_vec_genus
   ) %>%  
   mutate(p_adj = p.adjust(p_value, method = "fdr")) %>%
   ungroup()
@@ -249,9 +249,6 @@ hm_network <- hallmarks_msigdb %>%
     mutate(mor = 1) %>%
     dplyr::select(gs_name, gene_symbol,mor) %>%
     distinct()
-
-df <- test_res_sampleMetrics_clean_df
-meta_var_to_split <- "comparison_Dataset"
 
 f_run_association <- function(df, meta_var_to_split) {
   datasets <- df$Dataset %>% unique()
@@ -325,139 +322,3 @@ pw_activities_genus_df <- f_run_association(test_res_genus_clean_df, "genus_Data
 saveRDS(pw_activities_sampleMetrics_df, here("data","results","pathwayActivities_bySampleMetrics_df.rds"))
 saveRDS(pw_activities_genus_df, here("data","results","pathwayActivities_byGenus_df.rds"))
 
-
-
-
-
-
-
-# Compare with old pw scores
-hallmarks_old_df <- readRDS("./data/tmp_SuppTabledata/meta_pw.rds")
-
-genera_old_df <- readRDS("./data/tmp_SuppTabledata/enrichment_bac_pathways.rds")
-
-
-hallmarks_old_df$comparison %>% unique()
-
-full_join(
-  hallmarks_old_df %>%
-    filter(comparison == "02_Meta-analysis_TotalBacteria_CPM") %>%
-    filter(str_detect(Pathway, "HALLMARK")) %>%
-    transmute(Pathway, p_val_old = p.val_lm, score_old = Association_score),
-  pw_activities_sampleMetrics_df %>%
-    filter(condition == "All_total_Bacteria") %>%
-    transmute(Pathway = source, p_val_new = p_value, score_new = score)
-)
-
-genera_old_df$Pathway %>% unique()
-full_join(
-  genera_old_df %>%    
-    filter(str_detect(Pathway, "HALLMARK"),Genus == "Acidovorax") %>%
-    transmute(Pathway, p_val_old = p.val_lm, score_old = Association_score),
-  pw_activities_genus_df %>%
-    filter(feature == "Acidovorax") %>%
-    transmute(Pathway = source, p_val_new = p.val, score_new = score)
-) %>% 
-ggplot(aes(x=score_old,y=score_new)) +
-  geom_point() +
-  geom_abline(intercept = 0, slope = 1) +
-  theme_minimal() +
-  labs(x = "Old score", y = "New score")
-
-
-
-sessionInfo()
-
-
-
-
-
-
-
-# compare genus 
-old_genus_res_df <- readRDS("~/ownCloud/PhD/Projects/DKFZ_liver/data/interim/RNASeq_GeneExpressionAnalysis/GeneExpression_ResultTables/model_result_relAB.rds")
-old_genus_res_df %>%
-    filter(meta_feature == "Acidovorax") %>% pull(dataset) %>% unique()
-full_join(
-  old_genus_res_df %>%
-    filter(meta_feature == "Acidovorax",dataset == "all") %>%
-    transmute(gene = gene, p_val_old = p.val_lmem, eff_size_old = effect.size),
-  test_res_genus_clean_df %>%
-  filter(Dataset == "All", genus == "Acidovorax") %>%
-  transmute(gene, p_val_new = p.val, eff_size_new = effect.size)
-) %>%
-  mutate(
-    sameP = ifelse(signif(p_val_old,2) == signif(p_val_new,2),"same","notsame"),
-    sameEff = ifelse(signif(eff_size_old,2) == signif(eff_size_new,2),"same","notsame")
-    ) %>% 
-  dplyr::select(sameP,sameEff) %>% table() %>% 
-  filter(sameP != sameEff) %>% view()
- 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-test_res_df$feat1 %>% unique()
-test_res_df %>%  
-  arrange(p_value) %>% view()
-
-rowSums(!is.na(test_mat1))
-
-
-stopCluster(cl)
-a <- showConnections()
-cls$description %>% kill
-n_cores_to_use <- 4
-rm(cl)
-
-#* Compare with "old" test result with more genes
-test_res_old_df <- readRDS("./data/tmp_SuppTabledata/gene_vs_meta.rds")
-
-test_res_old_df$comparison %>% unique()
-full_join(
-  test_res_old_df %>%
-    filter(comparison == "Meta-analysis_Inflammation_status") %>%
-    transmute(gene = Gene, p_val_old = p.val_lm, eff_size_old = effect.size),
-  test_res_sample_metrics_df %>%
-  filter(Dataset == "All", comparison == "Inflammed_vs_nonInflamed") %>%
-  transmute(gene, p_val_new = p.val, eff_size_new = effect.size)
-) %>%
-  mutate(
-    sameP = ifelse(signif(p_val_old,2) == signif(p_val_new,2),"same","notsame"),
-    sameEff = ifelse(signif(eff_size_old,2) == signif(eff_size_new,2),"same","notsame")
-    ) %>% 
-  dplyr::select(sameP,sameEff) %>% table() %>% 
-  filter(sameP != sameEff) %>% view()
-
-test_res_sample_metrics_df$comparison %>% unique()
-
-
-
-
-
-lmem_res_df <- bind_rows(res_list) %>% as.data.frame()
-lapply(res_list, function(x) as.data.frame((x), stringsAsFactors = FALSE)) %>%
-  bind_rows() %>% 
-  as_tibble()
-
-class(res_list[[1]])
-
-
-lmem_res_df %>% view()
