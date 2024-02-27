@@ -25,7 +25,7 @@ host_gene_expression_mat <- readRDS(here("data","raw","hostGeneExp_allTumors.rds
 # The host gene expression matrix contains Trimmed-means of M-values (TMM)-normalized gene counts per million (CPM)
 # For host gene expression analysis only tumor sampples were considered with at least 1e6 total gene counts of protein-coding genes.
 
-# 19 Tumor samples of the DKFY cohort did not meet this threshold and will not be considered for downstream analyses of microbiome vs host gene expression
+# 19 Tumor samples of the DKFZ cohort did not meet this threshold and will not be considered for downstream analyses of microbiome vs host gene expression
 meta_combined_df %>%
   filter(Tissue_type == "Tumor") %>%
   filter(!str_detect(Dataset, "16S")) %>% 
