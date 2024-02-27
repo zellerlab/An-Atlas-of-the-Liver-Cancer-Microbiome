@@ -26,15 +26,7 @@ f_run_linear_models_parallel <- function(
     cont_or_cat_vec <- rep("categorical",nrow(mat1))
   }
   stopifnot("cont_or_cat vector has less entries than rownumbers in mat1" = length(cont_or_cat_vec)==nrow(mat1))
-
-  # if (length(unique(na.omit(meta[[random_effect_variable]]))) > 1) {
-  #   model_method <- "lmer"
-  #   message("Running linear-mixed effects models with:\n", random_effect_variable, "\nas random effect")
-  # } else {
-  #   model_method <- "lm"
-  #   message("Running simple linear models")
-  # }
-    
+  
   # Create task list
   tasks <- expand.grid(i = seq_len(nrow(mat1)), j = seq_len(nrow(mat2)))
 
@@ -98,6 +90,15 @@ f_run_linear_models_parallel <- function(
   
   return(lmem_res_df)
 }
+
+# i <- 3
+# j <- 1
+# for(i in seq(1,nrow(mat1))){
+#   for(j in seq(1,nrow(mat2))){
+#     message("i:",i," j:",j)
+#     tmp <- f_single_run_lm(i,j,mat1,mat2,meta_randomEff_df,random_effect_variable,cont_or_cat_vec)
+#   }
+# }
 
 f_single_run_lm <- function(i, j, mat1, mat2, meta, random_effect_variable, cont_or_cat_vec, threshold_for_prev = -3, prevalence_threshold = FALSE, compute_CI = FALSE) {
   #* This function is called by f_run_linear_models_parallel with a specific combination of rows in matrix1 and matrix2.
@@ -433,16 +434,6 @@ f_lmer_cont <- function(x, y, meta, formula, feat_name_x, feat_name_y) {
     }
   )
 }
-
-# i <- 3
-# j <- 1
-# for(i in seq(1,nrow(mat1))){
-#   for(j in seq(1,nrow(mat2))){
-#     message("i:",i," j:",j)
-#     tmp <- f_single_run_lm(i,j,mat1,mat2,meta_randomEff_df,random_effect_variable,cont_or_cat_vec)
-#   }
-# }
-
 
 f_run_fisher_test_parallel <- function(
   #* Parallelizing function to perform Fisher's exact tests in parallel for each combination of rows in mat1 and mat2 
