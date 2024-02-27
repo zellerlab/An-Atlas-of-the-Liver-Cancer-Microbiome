@@ -8,6 +8,199 @@
 require(lmerTest)
 require(progress)
 
+f_run_linear_models_parallel <- function(
+  dset_name = "all", mat1, mat2, meta, random_effect_variable = "randomEffFac",
+  threshold_for_prev = -3,prevalence_threshold = FALSE,
+  n_cores_max = 10,compute_CI = FALSE,cont_or_cat_vec = NULL) {
+  #* Accepts two matrices (mat1, mat2) and a meta data frame. Runs linear (mixed) models in parallel for each combination of rows in mat1 and mat2.
+  #* Function is considered to be functional on cluster environments and is parallelized using the parallel package.
+  
+  require(parallel) # For parallelization
+  require(pbapply)
+  # Initialization and checks
+  stopifnot(all(colnames(mat1) == colnames(mat2)))
+  stopifnot(random_effect_variable %in% colnames(meta))
+
+  #if no cont_or_cat vector is given, assume binary features in mat1
+  if(is.null(cont_or_cat_vec)){
+    cont_or_cat_vec <- rep("categorical",nrow(mat1))
+  }
+  stopifnot("cont_or_cat vector has less entries than rownumbers in mat1" = length(cont_or_cat_vec)==nrow(mat1))
+
+  # if (length(unique(na.omit(meta[[random_effect_variable]]))) > 1) {
+  #   model_method <- "lmer"
+  #   message("Running linear-mixed effects models with:\n", random_effect_variable, "\nas random effect")
+  # } else {
+  #   model_method <- "lm"
+  #   message("Running simple linear models")
+  # }
+    
+  # Create task list
+  tasks <- expand.grid(i = seq_len(nrow(mat1)), j = seq_len(nrow(mat2)))
+
+  num_cores <- detectCores()
+  print(paste("Number of cores available: ", num_cores))
+  if(n_cores_max < num_cores-2){
+    n_cores_to_use <- n_cores_max
+  }else{
+    n_cores_to_use <- num_cores-2
+  }
+  print(paste("Creating cluster with: ", n_cores_to_use))
+  cl <- makeCluster(n_cores_to_use)
+  
+  # Export variables and load libraries to the cluster
+  # Export variables and load libraries to the cluster
+  clusterExport(
+    cl = cl, varlist = c(
+      "mat1", "mat2", "random_effect_variable", "threshold_for_prev", "prevalence_threshold",
+      "f_single_run_lm", "tasks", "f_lm", "f_lmer", "f_lm_cont", "f_lmer_cont",
+      "compute_CI", "meta", "cont_or_cat_vec"
+    ),
+    envir = environment()
+  )
+  clusterEvalQ(cl=cl, library(lmerTest))
+  #message(colnames(meta))
+  # Run tasks in parallel and track progress
+  res_list <- pblapply(cl = cl, X = seq_len(nrow(tasks)), FUN = function(idx) {
+    f_single_run_lm(
+      tasks[idx, "i"],
+      tasks[idx, "j"],
+      mat1, mat2, meta=meta, random_effect_variable, #model_method,
+      threshold_for_prev = threshold_for_prev,
+      prevalence_threshold = prevalence_threshold,
+      compute_CI = compute_CI,
+      cont_or_cat_vec = cont_or_cat_vec
+    )
+  })
+  
+  # Stop the cluster
+  on.exit(stopCluster(cl))
+  
+  # Aggregate results
+  lmem_res_df <- lapply(res_list, function(x) as.data.frame((x), stringsAsFactors = FALSE)) %>%
+    bind_rows() %>% 
+    as_tibble()
+  
+  cols_to_convert <- c("effect_size", "lower95CI", "upper95CI", "p_value", "t_value", "N_Group1", "N_Group2","N_Samples","Prev_Group1", "Prev_Group2")
+  lmem_res_df <-
+    lmem_res_df %>%
+      add_column(
+        test_type = "linear (mixed) model",
+        formula = Reduce(paste, deparse(formula)),
+        dset_name = dset_name
+      ) %>%
+      mutate(across(
+        .cols = all_of(cols_to_convert[cols_to_convert %in% colnames(lmem_res_df)]),
+        .fns = ~ as.numeric(.)
+      )) %>% 
+    arrange(p_value) %>%
+    relocate(feat1)    
+  
+  return(lmem_res_df)
+}
+
+f_single_run_lm <- function(i, j, mat1, mat2, meta, random_effect_variable, cont_or_cat_vec, threshold_for_prev = -3, prevalence_threshold = FALSE, compute_CI = FALSE) {
+  #* This function is called by f_run_linear_models_parallel with a specific combination of rows in matrix1 and matrix2.
+  #* The function performs a prevalence filtering (if selected) and calls the correct linear (mixed) model function (for categorical or cintinuous features)
+  
+  feat1 <- rownames(mat1)[i]
+  feat2 <- rownames(mat2)[j]
+  feature_type <- cont_or_cat_vec[i]
+  x <- mat1[i, ]
+  y <- mat2[j, ]
+  idx <- which(!(is.na(x)) & !(is.na(y)))
+  if (length(idx) == 0) { # if no non-NA values are present, return NULL
+    return(NULL)
+  }
+  x <- x[idx]
+  y <- y[idx]
+
+  # Check prevalence if selected
+  if (prevalence_threshold != FALSE) {
+    if (sum(y > threshold_for_prev) / length(y) < prevalence_threshold) {
+      return(NULL)
+    }
+  }
+
+  if (length(unique(x)) < 2) {
+    return(NULL) # Returning NULL if condition is met
+  }
+
+  # Check whether lm or lmems should be run
+  if (length(unique(meta[names(y), ][[random_effect_variable]])) > 1) {
+    model_method <- "lmer"
+    # message("Running linear-mixed effects models with:\n", random_effect_variable, "\nas random effect")
+  } else {
+    model_method <- "lm"
+    # message("Running simple linear models")
+  }
+
+  #* Run continuous lmems or lms ----
+  if (feature_type == "continuous") {
+    if (model_method == "lmer") {
+      formula <- as.formula(paste0("y~x + (1|", random_effect_variable, ")"))
+      tmp_df <- f_lmer_cont(x = x, y = y, meta = meta, formula = formula, feat_name_x = feat1, feat_name_y = feat2)
+    } else if (model_method == "lm") {
+      tmp_df <- f_lm_cont(x = x, y = y, meta = meta, feat_name_x = feat1, feat_name_y = feat2)
+    }
+    tmp_df_list <- list(tmp_df) #to be in agreement with categorical features
+  } else if (feature_type == "categorical") {
+    #* Run categorical lmems or lms with any one vs all combination ----    
+    all_x_levels <- unique(x)
+    
+    # Temporary check: Stop if more than 4 unique features in categorical x variable
+    stopifnot("More than 4 unique features in categorical x -> recheck"=length(all_x_levels) < 4)
+    
+    tmp_df_list <- list()
+    for (c in seq(1, length(all_x_levels))) {
+      x_binary <- x
+      x_binary[x != all_x_levels[c]] <- "all"
+
+      if (length(all_x_levels) == 2) {
+        # pretty stupid to manually reset x_binary within every iteration of the for loop
+        # but for now most efficient
+        x_binary <- x
+        if (c > 1) {
+          next
+        } # break for loop after 1 iteration to not compute everything N times
+      }
+
+
+      if (model_method == "lmer") {
+        formula <- as.formula(paste0(
+          "y~x +", paste0("(1|", random_effect_variable, ")"),
+          collapse = ""
+        ))
+
+        tmp_df <- f_lmer(
+          x = x_binary,
+          y = y,
+          meta = meta,
+          formula = formula,
+          feat_name_x = feat1,
+          feat_name_y = feat2,
+          threshold_for_prev = threshold_for_prev,
+          compute_CI = compute_CI
+        )
+      } else if (model_method == "lm") {
+        formula <- as.formula("y~x")
+
+        tmp_df <- f_lm(
+          x = x_binary,
+          y = y,
+          meta = meta,
+          feat_name_x = feat1,
+          feat_name_y = feat2,
+          threshold_for_prev = threshold_for_prev,
+          compute_CI = compute_CI
+        )
+      }
+
+      tmp_df_list[[c]] <- tmp_df
+    }
+  }
+  return(do.call(rbind, tmp_df_list))
+}
 
 f_lm <- function(x,y,meta,feat_name_x,feat_name_y,threshold_for_prev = -3,compute_CI = FALSE){
   #* A wrapper for the lm function. Takes a vector x (categorical) and y (continuous) and runs a lm(y~x).
@@ -241,118 +434,6 @@ f_lmer_cont <- function(x, y, meta, formula, feat_name_x, feat_name_y) {
   )
 }
 
-f_spearman <- function(x,y,feat_name_x,feat_name_y){
-  #* Wrapper for base R spearman correlation of x and y
-  tryCatch(
-    {
-      res <- cor.test(x = x,y=y,method = "spearman")
-      return(c(feat1 = feat_name_x,
-               feat2 = feat_name_y,
-               effect_size = as.numeric(res$estimate),
-               p_value = as.numeric(res$p.value),
-               N_samples = length(x)))
-    },
-    error=function(e){
-      return(c(feat1 = feat_name_x,
-               feat2 = feat_name_y,
-               effect_size = NA,
-               p_value = NA,
-               N_samples = length(x)))
-    }
-  )
-}
-
-f_run_linear_models_parallel <- function(
-  dset_name = "all", mat1, mat2, meta, random_effect_variable = "randomEffFac",
-  threshold_for_prev = -3,prevalence_threshold = FALSE,
-  n_cores_max = 10,compute_CI = FALSE,cont_or_cat_vec = NULL) {
-  #* Accepts two matrices (mat1, mat2) and a meta data frame. Runs linear (mixed) models in parallel for each combination of rows in mat1 and mat2.
-  #* Function is considered to be functional on cluster environments and is parallelized using the parallel package.
-  
-  require(parallel) # For parallelization
-  require(pbapply)
-  # Initialization and checks
-  stopifnot(all(colnames(mat1) == colnames(mat2)))
-  stopifnot(random_effect_variable %in% colnames(meta))
-
-  #if no cont_or_cat vector is given, assume binary features in mat1
-  if(is.null(cont_or_cat_vec)){
-    cont_or_cat_vec <- rep("categorical",nrow(mat1))
-  }
-  stopifnot("cont_or_cat vector has less entries than rownumbers in mat1" = length(cont_or_cat_vec)==nrow(mat1))
-
-  # if (length(unique(na.omit(meta[[random_effect_variable]]))) > 1) {
-  #   model_method <- "lmer"
-  #   message("Running linear-mixed effects models with:\n", random_effect_variable, "\nas random effect")
-  # } else {
-  #   model_method <- "lm"
-  #   message("Running simple linear models")
-  # }
-    
-  # Create task list
-  tasks <- expand.grid(i = seq_len(nrow(mat1)), j = seq_len(nrow(mat2)))
-
-  num_cores <- detectCores()
-  print(paste("Number of cores available: ", num_cores))
-  if(n_cores_max < num_cores-2){
-    n_cores_to_use <- n_cores_max
-  }else{
-    n_cores_to_use <- num_cores-2
-  }
-  print(paste("Creating cluster with: ", n_cores_to_use))
-  cl <- makeCluster(n_cores_to_use)
-  
-  # Export variables and load libraries to the cluster
-  # Export variables and load libraries to the cluster
-  clusterExport(
-    cl = cl, varlist = c(
-      "mat1", "mat2", "random_effect_variable", "threshold_for_prev", "prevalence_threshold",
-      "f_single_run_lm", "tasks", "f_lm", "f_lmer", "f_lm_cont", "f_lmer_cont",
-      "compute_CI", "meta", "cont_or_cat_vec"
-    ),
-    envir = environment()
-  )
-  clusterEvalQ(cl=cl, library(lmerTest))
-  #message(colnames(meta))
-  # Run tasks in parallel and track progress
-  res_list <- pblapply(cl = cl, X = seq_len(nrow(tasks)), FUN = function(idx) {
-    f_single_run_lm(
-      tasks[idx, "i"],
-      tasks[idx, "j"],
-      mat1, mat2, meta=meta, random_effect_variable, #model_method,
-      threshold_for_prev = threshold_for_prev,
-      prevalence_threshold = prevalence_threshold,
-      compute_CI = compute_CI,
-      cont_or_cat_vec = cont_or_cat_vec
-    )
-  })
-  
-  # Stop the cluster
-  on.exit(stopCluster(cl))
-  
-  # Aggregate results
-  lmem_res_df <- lapply(res_list, function(x) as.data.frame((x), stringsAsFactors = FALSE)) %>%
-    bind_rows() %>% 
-    as_tibble()
-  
-  cols_to_convert <- c("effect_size", "lower95CI", "upper95CI", "p_value", "t_value", "N_Group1", "N_Group2","N_Samples","Prev_Group1", "Prev_Group2")
-  lmem_res_df <-
-    lmem_res_df %>%
-      add_column(
-        test_type = "linear (mixed) model",
-        formula = Reduce(paste, deparse(formula)),
-        dset_name = dset_name
-      ) %>%
-      mutate(across(
-        .cols = all_of(cols_to_convert[cols_to_convert %in% colnames(lmem_res_df)]),
-        .fns = ~ as.numeric(.)
-      )) %>% 
-    arrange(p_value) %>%
-    relocate(feat1)    
-  
-  return(lmem_res_df)
-}  
-
 # i <- 3
 # j <- 1
 # for(i in seq(1,nrow(mat1))){
@@ -362,109 +443,6 @@ f_run_linear_models_parallel <- function(
 #   }
 # }
 
-
-f_single_run_lm <- function(i, j, mat1, mat2, meta, random_effect_variable, cont_or_cat_vec, threshold_for_prev = -3, prevalence_threshold = FALSE, compute_CI = FALSE) {
-  #* This function is called by f_run_linear_models_parallel with a specific combination of rows in matrix1 and matrix2.
-  #* The function performs a prevalence filtering (if selected) and calls the correct linear (mixed) model function (for categorical or cintinuous features)
-  
-  feat1 <- rownames(mat1)[i]
-  feat2 <- rownames(mat2)[j]
-  feature_type <- cont_or_cat_vec[i]
-  x <- mat1[i, ]
-  y <- mat2[j, ]
-  idx <- which(!(is.na(x)) & !(is.na(y)))
-  if (length(idx) == 0) { # if no non-NA values are present, return NULL
-    return(NULL)
-  }
-  x <- x[idx]
-  y <- y[idx]
-
-  # Check prevalence if selected
-  if (prevalence_threshold != FALSE) {
-    if (sum(y > threshold_for_prev) / length(y) < prevalence_threshold) {
-      return(NULL)
-    }
-  }
-
-  if (length(unique(x)) < 2) {
-    return(NULL) # Returning NULL if condition is met
-  }
-
-  # Check whether lm or lmems should be run
-  if (length(unique(meta[names(y), ][[random_effect_variable]])) > 1) {
-    model_method <- "lmer"
-    # message("Running linear-mixed effects models with:\n", random_effect_variable, "\nas random effect")
-  } else {
-    model_method <- "lm"
-    # message("Running simple linear models")
-  }
-
-  #* Run continuous lmems or lms ----
-  if (feature_type == "continuous") {
-    if (model_method == "lmer") {
-      formula <- as.formula(paste0("y~x + (1|", random_effect_variable, ")"))
-      tmp_df <- f_lmer_cont(x = x, y = y, meta = meta, formula = formula, feat_name_x = feat1, feat_name_y = feat2)
-    } else if (model_method == "lm") {
-      tmp_df <- f_lm_cont(x = x, y = y, meta = meta, feat_name_x = feat1, feat_name_y = feat2)
-    }
-    tmp_df_list <- list(tmp_df) #to be in agreement with categorical features
-  } else if (feature_type == "categorical") {
-    #* Run categorical lmems or lms with any one vs all combination ----    
-    all_x_levels <- unique(x)
-    
-    # Temporary check: Stop if more than 4 unique features in categorical x variable
-    stopifnot("More than 4 unique features in categorical x -> recheck"=length(all_x_levels) < 4)
-    
-    tmp_df_list <- list()
-    for (c in seq(1, length(all_x_levels))) {
-      x_binary <- x
-      x_binary[x != all_x_levels[c]] <- "all"
-
-      if (length(all_x_levels) == 2) {
-        # pretty stupid to manually reset x_binary within every iteration of the for loop
-        # but for now most efficient
-        x_binary <- x
-        if (c > 1) {
-          next
-        } # break for loop after 1 iteration to not compute everything N times
-      }
-
-
-      if (model_method == "lmer") {
-        formula <- as.formula(paste0(
-          "y~x +", paste0("(1|", random_effect_variable, ")"),
-          collapse = ""
-        ))
-
-        tmp_df <- f_lmer(
-          x = x_binary,
-          y = y,
-          meta = meta,
-          formula = formula,
-          feat_name_x = feat1,
-          feat_name_y = feat2,
-          threshold_for_prev = threshold_for_prev,
-          compute_CI = compute_CI
-        )
-      } else if (model_method == "lm") {
-        formula <- as.formula("y~x")
-
-        tmp_df <- f_lm(
-          x = x_binary,
-          y = y,
-          meta = meta,
-          feat_name_x = feat1,
-          feat_name_y = feat2,
-          threshold_for_prev = threshold_for_prev,
-          compute_CI = compute_CI
-        )
-      }
-
-      tmp_df_list[[c]] <- tmp_df
-    }
-  }
-  return(do.call(rbind, tmp_df_list))
-}
 
 f_run_fisher_test_parallel <- function(
   #* Parallelizing function to perform Fisher's exact tests in parallel for each combination of rows in mat1 and mat2 
@@ -651,6 +629,26 @@ f_run_spearman <- function(dset_name = "all",mat1,mat2,prevalence_threshold = FA
            arrange(p_value))
 }
 
+f_spearman <- function(x,y,feat_name_x,feat_name_y){
+  #* Wrapper for base R spearman correlation of x and y
+  tryCatch(
+    {
+      res <- cor.test(x = x,y=y,method = "spearman")
+      return(c(feat1 = feat_name_x,
+               feat2 = feat_name_y,
+               effect_size = as.numeric(res$estimate),
+               p_value = as.numeric(res$p.value),
+               N_samples = length(x)))
+    },
+    error=function(e){
+      return(c(feat1 = feat_name_x,
+               feat2 = feat_name_y,
+               effect_size = NA,
+               p_value = NA,
+               N_samples = length(x)))
+    }
+  )
+}
 
 #* Compute Alpha- and beta-diversities / Wilcoxon tests ----
 f_pairwise_wilcoxon_tests <- function(df){
