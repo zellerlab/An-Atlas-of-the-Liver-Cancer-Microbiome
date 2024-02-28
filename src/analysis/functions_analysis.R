@@ -682,10 +682,11 @@ f_compute_distance_metrics <- function(df,relAB_mat,threshold_for_prevalence = 0
   euc_dist <- vegan::vegdist(t(log10(relAB_sel+1e-5)), method = "euclidean")
 
   # make sure to order distance matrix and metadata in the same way
-  sample_ids <- rownames(as.matrix(bray_curtis_dist))
+  sample_ids <- rownames(as.matrix(bray_curtis_dist))  
   df <- df %>% filter(Sample_ID %in% sample_ids) %>% mutate(rowN = Sample_ID) %>% column_to_rownames("rowN")
-  df <- df[sample_ids,]
+  df <- df[sample_ids, ]
   # Run PERMANOVA
+  set.seed(1)
   permanova_bray_res <- ecole::permanova_pairwise(
     bray_curtis_dist,
     as.character(df$group),
