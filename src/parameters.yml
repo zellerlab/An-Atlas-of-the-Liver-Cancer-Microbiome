@@ -1,0 +1,10 @@
+#########
+# An Atlas of the Human Liver Cancer Microbiome
+# Rahbari, Springer, Zwang et al. (2024)
+# Parameters file for visualization
+# by Fabian Springer
+########
+
+plotting:
+        responder: "#237B37"
+        non-responder: "#FF7F00"
