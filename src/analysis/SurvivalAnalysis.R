@@ -49,8 +49,6 @@ meta_survival_HCC_df <- meta_surival_all_df %>% filter(cancer_type == "HCC")
 meta_survival_CRLM_df <- meta_surival_all_df %>% filter(cancer_type == "CRLM")
 meta_survival_iCCA_df <- meta_surival_all_df %>% filter(cancer_type == "iCCA")
 
-meta_df <- meta_survival_HCC_df
-
 f_survival_analysis <- function(tax, rel_mat, meta_df,prevalence_threshold = FALSE) {
   # Function to perform survival analysis for a given taxon (tax). 
   # Subsets the relative abundance matrix with the provided taxon, generates a dataframe with rel. abundance, survival time and event.
@@ -65,8 +63,11 @@ f_survival_analysis <- function(tax, rel_mat, meta_df,prevalence_threshold = FAL
   #* Prepare data for survival analysis: Generate dataframe with relative abundance, prevalence and metadata
   surv_df <- suppressMessages(rel_mat[tax, ] %>%
     enframe(name = "Sample_ID", value = "relAbundance") %>%
-    mutate(isPrev = ifelse(relAbundance > 0, "present", "absent")) %>%
-    mutate(l10_rel = log10(relAbundance + 1e-5)) %>%
+    mutate(
+      isPrev = ifelse(relAbundance > 0, "present", "absent"),
+      isPrev = factor(isPrev, levels = c("present", "absent")),
+      l10_rel = log10(relAbundance + 1e-5)
+    ) %>%
     dplyr::select(Sample_ID, isPrev, l10_rel) %>%
     inner_join(., meta_df) %>%
     mutate(prevalence = sum(isPrev == "present") / n()))
