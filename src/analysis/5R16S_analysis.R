@@ -461,8 +461,8 @@ alpha_beta_diversity_clean_df <- alpha_beta_diversity_df %>%
   )
 
 #* Immunotherapy Cohort: Shannon, Richness and Beta-Diversity testing ----
-meta_immunotherapy_df <- read_tsv(here("data","metadata","meta_5R16S_immunotherapy.tsv"))
-species_relAbundance_immunotherapy_mat <- readRDS(here("data","raw","relAbundance_5R16S_species_ICIcohort.rds"))
+meta_immunotherapy_df <- read_tsv(here("data","metadata","meta_5R16S_ImmunotherapyCohort.tsv"))
+species_relAbundance_immunotherapy_mat <- readRDS(here("data","raw","relAbundance_5R16S_species_ImmunotherapyCohort.rds"))
 
 # Compute diversity
 div <- vegan::diversity(t(species_relAbundance_immunotherapy_mat[,meta_immunotherapy_df$Sample_ID]),index = "shannon") %>% enframe(name = "Sample_ID",value = "ShannonDiv")
@@ -507,7 +507,11 @@ res_df <- res_df %>%
 df <- meta_immunotherapy_df %>%
   dplyr::select(Sample_ID, Response_to_immunotherapy) %>%
   dplyr::rename(group = Response_to_immunotherapy)
-permanova_res_df <- f_compute_distance_metrics(df, species_relAbundance_immunotherapy_mat) %>% transmute(Group1, Group2, p.val_adj_permanova = p.adj, metric = paste(distance_metric, "distance", sep = " "))
+permanova_res_df <- f_compute_distance_metrics(
+  df, relAB_mat = species_relAbundance_immunotherapy_mat) %>% transmute(Group1, Group2, p.val_adj_permanova = p.adj, metric = paste(distance_metric, "distance", sep = " "),
+  threshold_for_prevalence = 0, prevalence_threshold = 0.05
+)
+permanova_res_df %>% glimpse()
 permanova_res_df <- permanova_res_df %>%
   pivot_wider(names_from = metric, values_from = p.val_adj_permanova) %>%
   dplyr::rename(p.val_adj_permanova_Bray = `Bray-Curtis distance`, p.val_adj_permanova_Euc = `Euclidean distance`)
