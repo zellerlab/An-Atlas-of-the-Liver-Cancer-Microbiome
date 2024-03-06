@@ -11,7 +11,7 @@ require(yaml)
 require(vegan)
 require(labdsv)
 
-source(here("src","figures","functions_plotting.R"))
+source(here("src","plotting","functions_plotting.R"))
 
 # Load colors for the individual groups
 parameters <- yaml::yaml.load_file(here("src", "parameters.yml"))
@@ -415,3 +415,46 @@ height_volcano <- 5
 ggsave(pt_N, filename = file.path(save_fig_folder,"N_Volcano_ResponderVsNonResponder.pdf"), width = width_volcano,height = height_volcano)
 
 
+#* Kaplan Meyer Plots of the immunotherapy cohort ----
+survRes_immunotherapy_list <- readRDS(here("data","results","survival_resObjects_ImmunotherapyCohort.rds"))
+# Define the species for which Kaplan-Meier plots should be generated
+
+# Plot survival curve for responders vs non-responders
+survFit <- survRes_immunotherapy_list[["RespVsNonResp"]]$survFit
+pt_O <- survminer::ggsurvplot(survFit,
+      title = "anti-PD-L1 + anti-VEGF therapy",
+      conf.int = TRUE, pval = TRUE, pval.size = 3,
+      risk.table = TRUE, fontsize = 3,
+      legend.labs = c("non-responder","responder"),
+      legend.title = "",
+      xlab = "Time post resection [months]",
+      ylab = "Overall survival probability",
+      conf.int.style = "step",
+      # surv.median.line = "hv",
+      palette = c("#237B37","#FF7F00"),
+      risk.table.height = .25,
+      ggtheme = theme_paper+theme(plot.title = element_text(size = 12,hjust = 0.5, face = "bold.italic")),
+      risk.table.col = "strata",
+      risk.table.title="",
+      risk.table.y.text.col = T, # colour risk table text annotations.
+      risk.table.y.text = FALSE
+    )
+out_name <- file.path(save_fig_folder,paste0("O_KaplanMeier_ResponderVsNonResponder.pdf"))
+pdf(out_name, width = 4, height = 5)
+print(pt_O, newpage = FALSE)
+dev.off()
+
+# Plot Leuconostoc gelidum
+names(survRes_immunotherapy_list)
+species <- "g__Lactococcus;s__Unknown species28"
+panel_number <- "P"
+# get index of species in list
+idx <- which(str_detect(names(survRes_immunotherapy_list), species))
+species <- f_create_label(species)
+stopifnot(length(idx) == 1)
+pt <- f_kaplan_meier(survRes_immunotherapy_list[[idx]]$survFit, species)
+# save the plot
+out_name <- file.path(save_fig_folder, paste0(panel_number, "_KaplanMeier_", species, ".pdf"))
+pdf(out_name, width = 4, height = 5)
+print(pt, newpage = FALSE)
+dev.off()
