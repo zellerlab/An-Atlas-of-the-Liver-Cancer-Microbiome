@@ -6,5 +6,18 @@
 ########
 
 plotting:
+        CTRL: "darkgrey"
+        HCC: "#62008c"
+        iCCA: "#266d07"
+        BTC: "#266d07"
+        CRLM: "#fa7c0c"
+        "HCC/iCCA": "#22B5D3"
+        GBC: "#bdbf00"
+        "phCCA/dCCA": "#fe8b02"  
+
+        
         responder: "#237B37"
         non-responder: "#FF7F00"
+
+        Adj. non-tumor_iCCA: "#65d03d"
+        Adj. non-tumor_CRLM: "#fef400"
