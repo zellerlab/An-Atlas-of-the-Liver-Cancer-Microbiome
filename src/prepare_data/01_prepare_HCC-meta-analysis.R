@@ -88,11 +88,6 @@ meta_combined_df <- bind_rows(
     TRUE ~ Etiology
   ))
 
-#* Note to self: All the samples and genera selected now are also in the "real" testset.
-
-
-
-
 #* Next step: Take filtered relative abundance matrix and perform batchwise linear transformation ----
 ### Install the BEATLE package from this GitLab Repository: https://git.embl.de/grp-zeller/batch_effect_correction
 library(BEATLE)
