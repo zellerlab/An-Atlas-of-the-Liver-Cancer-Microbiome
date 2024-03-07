@@ -334,7 +334,7 @@ pt_K <- f_boxplot_by_group(plot_df %>% mutate(y = bacterial_cells_per_40ngDNA + 
   theme(axis.title.x = element_blank(),legend.position = 'none')+
   # Just use the ggsignif function for plotting the p-value symbols
   ggsignif::geom_signif(
-    comparisons = wilcox_tests_list,
+    comparisons = comparisons_list,
     annotations = p_to_symbol(p_adj_vec_qPCR),
     vjust =-0,step_increase = 0.075,textsize = 5
   )

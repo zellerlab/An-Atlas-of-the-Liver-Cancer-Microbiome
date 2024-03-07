@@ -311,7 +311,7 @@ meta_immunotherapy_df <- read_tsv(here("data","metadata","meta_5R16S_Immunothera
 species_relAbundance_immunotherapy_mat <- readRDS(here("data","raw","relAbundance_5R16S_species_ImmunotherapyCohort.rds"))
 # Load the testing results of alpha- and beta-diversity
 alpha_beta_diversity_immuno_clean_df <- read_tsv(here("data","results","5R16S_ImmunotherapyCohort_diversity_comparisons_df.tsv"))
-alpha_beta_diversity_immuno_clean_df %>% 
+
 
 # Compute diversity
 div <- vegan::diversity(t(species_relAbundance_immunotherapy_mat[,meta_immunotherapy_df$Sample_ID]),index = "shannon") %>% enframe(name = "Sample_ID",value = "ShannonDiv")
