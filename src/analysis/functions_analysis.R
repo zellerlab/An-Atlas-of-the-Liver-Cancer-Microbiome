@@ -149,8 +149,8 @@ f_single_run_lm <- function(i, j, mat1, mat2, meta, random_effect_variable, cont
     #* Run categorical lmems or lms with any one vs all combination ----    
     all_x_levels <- unique(x)
     
-    # Temporary check: Stop if more than 4 unique features in categorical x variable
-    stopifnot("More than 4 unique features in categorical x -> recheck"=length(all_x_levels) < 4)
+    # Temporary check: Stop if more than 10 unique features in categorical x variable
+    stopifnot("More than 10 unique features in categorical x -> recheck"=length(all_x_levels) < 10)
     
     tmp_df_list <- list()
     for (c in seq(1, length(all_x_levels))) {
