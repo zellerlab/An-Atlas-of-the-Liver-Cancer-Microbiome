@@ -10,7 +10,6 @@ library(here)
 library(parallel)
 library(pbapply)
 library(progress)
-library(openxlsx)
 
 source(here("src","analysis","functions_analysis.R"))
 source(here("src","plotting","functions_plotting.R"))
