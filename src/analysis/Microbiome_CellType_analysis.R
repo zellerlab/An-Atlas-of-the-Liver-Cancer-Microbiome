@@ -44,7 +44,9 @@ div <- vegan::diversity(t(count_rar_rel), index = "shannon") %>% enframe(name = 
 rich <- colSums(count_rar_rel > 0) %>% enframe(name = "Sample_ID",value = "Genus richness")
 diversity_richness_df <- full_join(div,rich,by = "Sample_ID")
 
-additional_metrics_df <- left_join(diversity_richness_df,total_bact_counts_df %>% dplyr::select(Sample_ID,Bacteria_CPM))
+additional_metrics_df <- left_join(diversity_richness_df,total_bact_counts_df %>% dplyr::select(Sample_ID,`Total bacteria (CPM)`))
+
+samples_for_testing <- meta_test_df$Sample_ID
 
 #join with the bacterial relative abundance matrix
 bac_feature_mat <- bind_rows(
@@ -65,7 +67,6 @@ l10_bac_feature_mat <- log10(bac_feature_mat + 1e-5)
 l10_celltype_proportion_mat <- log10(host_celltype_proportion_mat + 1e-5)
 
 #reorder matrices and generate dataframe with random effects
-samples_for_testing <- meta_test_df$Sample_ID
 l10_bac_feature_mat <- l10_bac_feature_mat[,samples_for_testing]
 l10_celltype_proportion_mat <- l10_celltype_proportion_mat[,samples_for_testing]
 
