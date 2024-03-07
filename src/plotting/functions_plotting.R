@@ -293,6 +293,9 @@ f_compute_PCoA <- function(meta_df, mat, method = "bray", threshold_for_prevalen
   relAB_sel <- mat_clean[prev >= prevalence_threshold, ]
   message(nrow(relAB_sel), " out of ", nrow(mat_clean), " features passed prevalence cutoff")
 
+  # remove empty columns
+  relAB_sel <- relAB_sel[, colSums(relAB_sel) > 0]
+
   # Compute Bray-Curtis distances
   dist <- vegan::vegdist(x = t(relAB_sel), method = method)
   pco <- labdsv::pco(dis = dist, k = 2)
