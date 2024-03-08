@@ -322,3 +322,64 @@ f_compute_PCoA <- function(meta_df, mat, method = "bray", threshold_for_prevalen
 
   return(list(PCO_res = res, var_expl_df = var_expl))
 }
+
+f_fetch_ncbi_taxonomy <- function(tax_names) {
+  #takes a vector of taxonomic names (e.g. c("Escherichia","Fusobacterium")) and queries NCBI to get full taxonomic ranks
+
+  require(rentrez)
+  require(xml2)
+  require(progress)
+
+  message("Fetching ",length(tax_names), " IDs from NCBI")
+
+  # Initialize result_df and progress bar
+  result_df <- tibble()
+  pb <- progress_bar$new(format = "[:bar] :percent ETA: :eta", total = length(tax_names))
+  
+  max_retries <- 3    
+  for (tax in tax_names) {  
+    #message("\n",tax,"\n")
+    success <- FALSE
+    retries <- 0
+    
+    while (!success && retries < max_retries) {
+      tryCatch({
+        tax_record <- entrez_search(db = "taxonomy", term = paste0(tax, " AND (Bacteria[Organism] OR Archaea[Organism])"))
+        
+        if (tax_record$count > 0) {
+          tax_id <- tax_record$ids[1]
+          tax_fetch <- entrez_fetch(db = "taxonomy", id = tax_id, rettype = "xml")
+          
+          xml_doc <- read_xml(tax_fetch)
+          lineage_info <- xml_find_all(xml_doc, "//LineageEx/Taxon")
+          
+          tax_levels <- tibble(rank=character(),scientific_name=character())          
+          for (i in lineage_info) {
+            scientific_name <- xml_text(xml_find_first(i, "./ScientificName"))
+            rank <- xml_text(xml_find_first(i, "./Rank"))
+            tax_levels <- add_row(tax_levels, rank = rank, scientific_name = scientific_name)
+          }
+          
+          tax_levels <- add_row(tax_levels, rank = "query_tax", scientific_name = tax)
+          result_df <- bind_rows(result_df, pivot_wider(tax_levels %>% filter(str_detect(rank,"phylum|class|order|family|genus|species|query_tax")), names_from = rank, values_from = scientific_name))
+        } else {
+          result_df <- bind_rows(result_df, tibble(query_tax = tax))
+        }
+        
+        success <- TRUE
+      }, error = function(e) {
+        retries <- retries + 1
+        Sys.sleep(1)
+      })
+    }
+    
+    if (!success) {
+      result_df <- bind_rows(result_df, tibble(query_tax = tax))
+    }
+    
+    Sys.sleep(0.5)
+    pb$tick()
+  }
+  
+  return(result_df)
+}
