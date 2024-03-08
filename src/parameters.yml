@@ -21,3 +21,10 @@ plotting:
 
         Adj. non-tumor_iCCA: "#65d03d"
         Adj. non-tumor_CRLM: "#fef400"
+
+        HBV_HCC: "#65d03d"
+        HCV_HCC: "#0012fa"
+        ALD/ASH_HCC: "#fef400"        
+        MAFLD/MASH_HCC: "#ff6600"
+        viral_HCC: "#00d989"
+        non-viral_HCC: "#fa7c0c"
