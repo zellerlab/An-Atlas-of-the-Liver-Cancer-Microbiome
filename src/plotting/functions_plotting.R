@@ -383,3 +383,14 @@ f_fetch_ncbi_taxonomy <- function(tax_names) {
   
   return(result_df)
 }
+
+f_rescale_effect_sizes <- function(mat) {
+  # For heatmap plotting -> rescales effect size estimates  
+  # Rescale based on 0.95 quantile (to be less sensitive to outliers)
+  scale_factor <- quantile(abs(na.omit(mat)), 0.95)
+
+  # Ensure values lie within [-1, 1]
+  rescaled <- pmin(pmax(mat / scale_factor, -1), 1)
+  return(rescaled)
+}
+
