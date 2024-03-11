@@ -28,3 +28,9 @@ plotting:
         MAFLD/MASH_HCC: "#ff6600"
         viral_HCC: "#00d989"
         non-viral_HCC: "#fa7c0c"
+
+        TCGA: "#FFBB78"
+        DKFZ: "#FF9896"
+        ISMMS-IDIBAPS: "#60A960"
+        INSERM: "#0841A3"
+        "5R16S": "#C58757"
