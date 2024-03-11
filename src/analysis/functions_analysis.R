@@ -548,7 +548,11 @@ f_single_run_fisher_test <- function(i, j, mat1, mat2, threshold_for_prev,preval
       group_levels <- rev(group_levels)
     }
     # Binarize y based on threshold
-    y_binarized <- ifelse(y > threshold_for_prev, 1, 0)
+    y_binarized <- ifelse(y > threshold_for_prev, 1, 0)    
+    # skip iteration if only one category of samples is present 
+    if(length(unique(y_binarized)) < 2){
+      next
+    }
     # Compute Fisher's Exact Test
     contingency_table <- table(x_binary, y_binarized)
     contingency_table <- contingency_table[group_levels,]
