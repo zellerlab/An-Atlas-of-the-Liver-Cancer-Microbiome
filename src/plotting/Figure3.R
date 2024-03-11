@@ -324,8 +324,11 @@ l3 <- Legend(labels = c(paste0("q<", fdr_threshold)), title = "", type = "points
 
 leg_combined <- packLegend(lgd_main, l2, l3, direction = "vertical")
 
+# Modify appearanece of row and column labels
 colLabs <- as.expression(lapply(column_levels, function(a) bquote(bolditalic(.(a)))))
 rowLabs <- as.expression(lapply(row_levels, function(a) bquote(bold(.(a)))))
+
+# plot the heatmap
 hm <- ComplexHeatmap::Heatmap(mat_scores_rescaled,
   bottom_annotation = col_anno,
   
@@ -342,6 +345,7 @@ hm <- ComplexHeatmap::Heatmap(mat_scores_rescaled,
   row_names_gp = gpar(fontsize = 8),
   row_names_side = c("left"),
   row_gap = unit(c(1.5), "mm"),
+  row_labels = rowLabs,
 
   # general style
   border = T,
