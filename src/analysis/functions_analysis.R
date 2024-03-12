@@ -73,6 +73,7 @@ f_run_linear_models_parallel <- function(
     bind_rows() %>% 
     as_tibble()
   
+  # convert selected columns to numeric
   cols_to_convert <- c("effect_size", "lower95CI", "upper95CI", "p_value", "t_value", "N_Group1", "N_Group2","N_Samples","Prev_Group1", "Prev_Group2")
   lmem_res_df <-
     lmem_res_df %>%
@@ -155,6 +156,8 @@ f_single_run_lm <- function(i, j, mat1, mat2, meta, random_effect_variable, cont
     
     tmp_df_list <- list()
     for (c in seq(1, length(all_x_levels))) {
+
+      # if there are more than two x-levels, run one-vs-all comparisons for each level of x
       x_binary <- x
       x_binary[x != all_x_levels[c]] <- "all"
 
@@ -198,7 +201,10 @@ f_single_run_lm <- function(i, j, mat1, mat2, meta, random_effect_variable, cont
         )
       }
 
-      tmp_df_list[[c]] <- tmp_df
+      tmp_df_list[[c]] <- c(
+        "feat1_group" = feat1, # add feat1_group (e.g. Child_Pugh_Score) to have grouping of categorical variables for p-value correction
+        tmp_df
+      )
     }
   }
   return(do.call(rbind, tmp_df_list))
@@ -530,6 +536,8 @@ f_single_run_fisher_test <- function(i, j, mat1, mat2, threshold_for_prev,preval
   tmp_df_list <- list()
 
   for (c in seq(1, length(all_x_levels))) {
+
+    # if there are more than two x-levels, run one-vs-all comparisons for each level of x
     x_binary <- x
     x_binary[x != all_x_levels[c]] <- "all"
 
@@ -564,6 +572,7 @@ f_single_run_fisher_test <- function(i, j, mat1, mat2, threshold_for_prev,preval
 
     # Return a data frame with the results
     tmp_df <- data.frame(
+      feat1_group = feat1, # add feat1_group (e.g. Child_Pugh_Score) to have grouping of categorical variables for p-value correction
       feat1 = paste0(feat1,"_",group_levels[2]),
       feat2 = feat2,
       Group1 = group_levels[1],
@@ -573,9 +582,8 @@ f_single_run_fisher_test <- function(i, j, mat1, mat2, threshold_for_prev,preval
       N_Group1 = sum(x == group_levels[1]),
       N_Group2 = sum(x == group_levels[2]),
       Prev_Group1 = proportion_group1,
-      Prev_Group2 = proportion_group2
-    )
-    tmp_df_list[[c]] <- tmp_df
+      Prev_Group2 = proportion_group2)    
+    tmp_df_list[[c]] <- tmp_df      
   }  
   
 

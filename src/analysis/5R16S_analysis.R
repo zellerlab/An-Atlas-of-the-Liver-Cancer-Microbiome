@@ -278,13 +278,12 @@ f_run_clinical_testing <- function(dset_name = "all", cancer_type, clinical_all_
       mat1 = cat_feat_mat,
       mat2 = tmp_log10_relAB_mat,
       meta = meta,
-      random_effect_variable = "dummy",
+      random_effect_variable = "dummy", # run without a random effect (basic linear models)
       threshold_for_prev = -5,
       prevalence_threshold = 0.05,
       n_cores_max = n_cores,
-      compute_CI = FALSE) %>%  # Only use true if you really need it - it slows down the computation massively.
-     
-    group_by(feat1) %>% #* Important: Define how pvalues are controlled!
+      compute_CI = FALSE) %>%  # Only use true if you really need it - it slows down the computation massively.     
+    group_by(feat1_group) %>% # control for every comparison group to correctly account for tests with multiple levels (e.g. Child Pugh C vs all, Child Pugh B vs all, etc.)
     mutate(p_adj = p.adjust(p_value, method = "fdr")) %>%
     ungroup()
   
@@ -296,24 +295,23 @@ f_run_clinical_testing <- function(dset_name = "all", cancer_type, clinical_all_
       mat2 = tmp_log10_relAB_mat,
       threshold_for_prev = -5,
       prevalence_threshold = 0.05,
-      n_cores_max = n_cores
-    ) %>% # Only use true if you really need it - it slows down the computation massively.
-    group_by(feat1) %>% #* Important: Define how pvalues are controlled!
+      n_cores_max = n_cores) %>% # Only use true if you really need it - it slows down the computation massively.
+    group_by(feat1_group) %>% # control for every comparison group to correctly account for tests with multiple levels (e.g. Child Pugh C vs all, Child Pugh B vs all, etc.)
     mutate(p_adj = p.adjust(p.val_fisher, method = "fdr")) %>%
     ungroup()
-
+  
   # Combine results
   combined_test_res_df <-
     full_join(
       test_res_lm_df %>%
         glimpse() %>%
-        transmute(feat1, feat2, Group1, Group2,
+        transmute(feat1_group, feat1, feat2, Group1, Group2,
           p.val_lm = p_value, p.val_adj_lm = p_adj, effect.size = effect_size,
           N_Group1, N_Group2, Prev_Group1, Prev_Group2
         ),
       test_res_fisher_df %>%
         glimpse() %>%
-        transmute(feat1, feat2, Group1, Group2,
+        transmute(feat1_group, feat1, feat2, Group1, Group2,
           p.val_fisher,
           p.val_adj_fisher = p_adj, odds.ratio = odds_ratio
         )
@@ -325,10 +323,10 @@ f_run_clinical_testing <- function(dset_name = "all", cancer_type, clinical_all_
         N_Samples = as.numeric(N_samples), Prevalence = as.numeric(Prevalence)
       ) %>%
       mutate(feature_type = "continuous")) %>%
-    dplyr::rename(comparison = feat1, tax = feat2) %>%
+    dplyr::rename(comparison = feat1, tax = feat2,comparison_group = feat1_group) %>%
     dplyr::relocate(-N_Group1, -N_Group2, -Prevalence, -Prev_Group1, -Prev_Group2, -feature_type) %>%
     dplyr::relocate(comparison, tax, Group1, Group2, N_Samples) %>% 
-    dplyr::relocate(-feature_type)
+    dplyr::relocate(-feature_type,-comparison_group)
   
   return(combined_test_res_df)
 }
