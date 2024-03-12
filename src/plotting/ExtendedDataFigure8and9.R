@@ -1,7 +1,7 @@
 #########
 # An Atlas of the Human Liver Cancer Microbiome
 # Rahbari, Springer, Zwang et al. (2024)
-# Reproduce the plots shown in Extended Data Figure 4
+# Reproduce the plots shown in Extended Data Figure 8 and 9
 # by Fabian Springer
 ########
 
