@@ -75,13 +75,12 @@ pt_H <- f_plot_volcano(
 
 w <- 4.5
 h <- 5 
-ggsave(pt_H, filename = file.path(save_fig_folder,"ExtDataFig1H_Volcano_HCCiCCAvsCRLM.pdf"), width = w,height = h)
+ggsave(pt_H, filename = file.path(save_fig_folder,"ExtendedDataFigure1H_Volcano_HCCiCCAvsCRLM.pdf"), width = w,height = h)
 
 #* G: PCoA of different cancer samples ----
 alpha_beta_diversity_clean_df <- read_tsv(here("data","results","5R16S_diversity_comparisons_df.tsv")) %>% filter(comparison == "HCC_vs_iCCA_vs_CRLM")
-alpha_beta_diversity_clean_df %>% glimpse()
 
-df <- df %>%
+df <- alpha_beta_diversity_clean_df %>%
   mutate(p_text = paste0(Group1, " vs ", Group2, ": ", signif(p.val_adj_permanova_Bray,1))) %>% 
   dplyr::relocate(p_text)
 p_text <- paste(df$p_text, collapse="\n")
@@ -97,7 +96,7 @@ theme(legend.position = "none")+
 annotate("text", x = -Inf, y = -Inf, label = p_text, size = 3, color = "black",hjust = -0.1, vjust = -0.5)
 rowSums(species_relAbundance_mat > 0) %>% summary()
 
-ggsave(pt_H,filename = file.path(save_fig_folder,"ExtDataFig1G_PCoA_HCCvsiCCAvsCRLM.pdf"), width = 6, height = 5)
+ggsave(pt_G,filename = file.path(save_fig_folder,"ExtendedDataFigure1G_PCoA_HCCvsiCCAvsCRLM.pdf"), width = 6, height = 5)
 
 
 
