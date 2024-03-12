@@ -394,3 +394,88 @@ f_rescale_effect_sizes <- function(mat) {
   return(rescaled)
 }
 
+f_prepare_boxplot_plot_df <- function(tax,clin_feature,relAB_mat,meta_df){        
+    # Takes metadata and rel. abundance matrix. 
+    # Generates a dataframe for a given taxon and a given clinical continuous parameter that can be used for plotting. 
+    idx <- which(str_detect(rownames(relAB_mat),tax))
+    stopifnot(length(idx) == 1)
+    plot_df <-
+        relAB_mat[idx, , drop = F] %>%
+        as_tibble(rownames = "bac") %>%
+        gather(-bac, key = "Sample_ID", value = "rel") %>%
+        left_join(., meta_df %>% transmute(Sample_ID, clin_feat := !!as.symbol(clin_feature))) %>%
+        filter(!is.na(clin_feat)) %>% 
+        mutate(isPrev = ifelse(rel > 0,"Present","Absent")) %>% 
+        mutate(Group = as_factor(isPrev))
+    
+    # add sample numbers
+    plot_df <- 
+      left_join(plot_df, 
+      plot_df %>% dplyr::select(isPrev, Sample_ID) %>%
+        group_by(isPrev) %>%
+        summarise(N = n())) %>%
+      mutate(bac_lab = paste0(isPrev, "\n(N=", N, ")"))
+    
+    return(plot_df)
+}
+
+f_prepare_barplot_plot_df <- function(tax, clin_feature, relAB_mat, meta_df) {
+  # Takes metadata and rel. abundance matrix.
+  # Generates a dataframe for a given taxon and a given clinical categorical parameter that can be used for plotting.
+  # Computes Fisher's exact test for the given taxon prevalence and clinical feature.
+
+  idx <- which(str_detect(rownames(relAB_mat), tax))
+  stopifnot(length(idx) == 1)
+  plot_df <-
+    relAB_mat[idx, , drop = F] %>%
+    as_tibble(rownames = "bac") %>%
+    gather(-bac, key = "Sample_ID", value = "rel") %>%
+    left_join(., meta_df %>% transmute(Sample_ID, clin_feat := !!as.symbol(clin_feature))) %>%
+    filter(!is.na(clin_feat)) %>%
+    mutate(isPrev = ifelse(rel > 0, 1, 0))
+
+  # Add sample numbers
+  plot_df <-
+    plot_df %>%
+    left_join(plot_df %>%
+      dplyr::select(clin_feat, Sample_ID) %>%
+      group_by(clin_feat) %>%
+      summarise(N = n())) %>%
+    mutate(clin_feat_lab = paste0(clin_feat, "\n(N=", N, ")"))
+
+  # Compute Fisher's exact test
+  tables <- with(plot_df, table(bac, clin_feat_lab, isPrev))
+  fisher_res <- apply(tables, 1, function(t) {
+    tbl <- matrix(t, ncol = 2, byrow = TRUE)
+    return(fisher.test(tbl)$p.value)
+  })
+  
+  # Compute prevalence of the taxon per clinical category
+  bar_df <-
+    plot_df %>%
+    group_by(clin_feat, isPrev, N, clin_feat_lab) %>%
+    summarise(n_category = n()) %>%
+    mutate(n_category_perc = n_category / N) %>%
+    filter(isPrev == 1) %>%
+    mutate(n_category_perc = n_category_perc * 100) %>%
+    mutate(p.val_fisher = as.numeric(fisher_res))
+
+  # If there are samples with one clinical condition, manually add the second one and set it to 0
+  if (nrow(bar_df) == 1) {
+    missing_feat <- unique(plot_df$clin_feat)[!(unique(plot_df$clin_feat) %in% bar_df$clin_feat)]
+    bar_df <- bind_rows(
+      bar_df,
+      tibble(
+        clin_feat = missing_feat,
+        isPrev = 1,
+        N = plot_df %>% filter(clin_feat == missing_feat) %>% nrow(),
+        n_category = 0,
+        p.val_fisher = as.numeric(fisher_res),
+        n_category_perc = 0
+      ) %>%
+        mutate(clin_feat_lab = paste0(clin_feat, "\n(N=", N, ")"))
+    )
+  }
+  
+  return(bar_df %>% mutate(clin_feat_lab = as_factor(clin_feat_lab)))
+}
