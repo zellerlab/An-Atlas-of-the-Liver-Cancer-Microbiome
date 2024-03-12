@@ -18,7 +18,7 @@ parameters <- yaml::yaml.load_file(here("src", "parameters.yml"))
 group_colors <- unlist(parameters$plotting)
 
 # Define folder to store plots
-save_fig_folder <- here("figures","supplementary")
+save_fig_folder <- here("figures","ExtendedDataFigures")
 if(!dir.exists(save_fig_folder)){
   dir.create(save_fig_folder, recursive = TRUE)
 }
@@ -303,7 +303,7 @@ for(species in to_plot){
   pt <- f_kaplan_meier(survRes_Obj[[idx]]$survFit,species)
   
   # save the plot
-  out_name <- file.path(save_fig_folder,paste0("ExtendedFigure8",panel_number[p],"_KaplanMeier_",species,"_",dataset_name[p],".pdf"))
+  out_name <- file.path(save_fig_folder,paste0("ExtendedDataFigure8",panel_number[p],"_KaplanMeier_",species,"_",dataset_name[p],".pdf"))
   pdf(out_name, width = 4, height = 5)
   print(pt, newpage = FALSE)
   dev.off()
