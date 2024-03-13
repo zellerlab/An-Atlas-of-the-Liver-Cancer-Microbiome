@@ -277,6 +277,7 @@ names(phylum_colors_vec) <- names
 phylum_colors_df <- phylum_genus_df %>%
   distinct() %>% 
   left_join(., phylum_colors_vec %>% enframe(name = "phylum", value = "HEX"))
+write_tsv(phylum_colors_df,here("data","processed","phylum_colors_df.tsv"))
 
 # generate the annotation vector
 anno_vec_phylum <- phylum_genus_df$phylum[match(column_levels, phylum_genus_df$genus)]
