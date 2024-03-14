@@ -62,15 +62,15 @@ comparison_list <- list(
 # define how the comparisons are called in the dataframe with the testing result
 comparison_name <- c("Tumor_vs_Adj_iCCA","Tumor_vs_Adj_CRLM","iCCA_GBC_vs_phCCA_dCCA")
 
-# Richness
+
 i <- 3
 c_comparison <- comparison_list[[i]]
 c_name <- comparison_name[i]
 
 f_helper_plot_diversity <- function(c_comparison, c_name) {
   # takes a comparison vector (e.g. c(Adj. non-tumor iCCA, iCCA)) and a comparison name (e.g. "Tumor_vs_Adj_iCCA"), 
-  # generates a dataframe with richness and shannon diversities and pulls the p-values from the alpha_beta_diversity_clean_df
-  # returns plots of shannon diversity and richness
+  # generates a dataframe with richness and shannon diversities and computes PCoA and pulls the p-values from the alpha_beta_diversity_clean_df
+  # returns plots of shannon diversity, richness and PCoA
 
   message("Plotting ", c_name, " with comparison ", paste(c_comparison,sep = "  :"))
 
@@ -84,7 +84,7 @@ f_helper_plot_diversity <- function(c_comparison, c_name) {
   # Get the p-values from the Wilcoxon testing of the species richness and shannon diversity
   # Get list of comparisons and the p-values:
   df <- alpha_beta_diversity_clean_df %>% filter(comparison == c_name)
-  c_comparison_list <- lapply(1:nrow(df), function(i) c(df$Group1[i], df$Group2[i])) # reverse order for better visualization
+  c_comparison_list <- lapply(1:nrow(df), function(i) c(df$Group1[i], df$Group2[i]))
   p_adj_vec_richness <- df$p.val_adj_wilcox_richness_species
   pt_richness <- f_boxplot_by_group(tmp_df, xlab = "", ylab = "Species richness", corral.width = 0.49) +
     theme(legend.position = "none", axis.title.x = element_blank()) +
@@ -151,7 +151,7 @@ for(i in seq(1,length(comparison_list))){
   id <- id + 1
   ggsave(paste0(save_fig_folder,"/ExtendedDataFigure2",figure_indices[id],"_ShannonDiv.pdf"), res$shannon, width = w, height = h)
   id <- id + 1
-  ggsave(paste0(save_fig_folder,"/ExtendedDataFigure2",figure_indices[id],"_ShannonDiv.pdf"), res$pcoa, width = 6, height = 5)
+  ggsave(paste0(save_fig_folder,"/ExtendedDataFigure2",figure_indices[id],"_PCoA.pdf"), res$pcoa, width = 6, height = 5)
   id <- id + 1
 }
 
