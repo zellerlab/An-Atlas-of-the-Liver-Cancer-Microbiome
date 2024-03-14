@@ -220,7 +220,7 @@ f_lm <- function(x,y,meta,feat_name_x,feat_name_y,threshold_for_prev = -3,comput
   # Define which level of x to take as reference
   x_levels <- sort(as.character(na.omit((unique(dat_df$x)))))
   lev_1_categories <- c("male", "1","N1","M1","L1","high", "multinodular", "Inflamed", "present", "Tumor", "viral_HCC", "ALD/ASH_HCC", "HBV_HCC","yes","responder","iCCA")
-  lev_2_categories <- c("all","Adj. non-tumor_CCC","Adj. non-tumor_CRLM","Adj. non-tumor_HCC","Adj. non-tumor")
+  lev_2_categories <- c("all","Adj. non-tumor_CCC","Adj. non-tumor_CRLM","Adj. non-tumor_HCC","Adj. non-tumor","EarlyFib","LateFib")
   if(any(x_levels %in% lev_1_categories)){
     lev1 <- x_levels[x_levels %in% lev_1_categories]
     lev2 <- x_levels[!(x_levels %in% lev_1_categories)]
@@ -231,6 +231,11 @@ f_lm <- function(x,y,meta,feat_name_x,feat_name_y,threshold_for_prev = -3,comput
     lev1 <- x_levels[1]
     lev2 <- x_levels[2]
   }  
+  if(any(c(length(lev1) == 0, length(lev2) == 0))){ # If all x-levels are in the same category, just keep the default order
+    lev1 <- x_levels[1]
+    lev2 <- x_levels[2]
+  }
+
   df_merged$x <- factor(df_merged$x,levels = c(lev2,lev1))
   N_group1 <- nrow(subset(df_merged,x == lev2))
   N_group2 <- nrow(subset(df_merged,x == lev1))
@@ -335,7 +340,7 @@ f_lmer <- function(x,y,meta,formula,feat_name_x,feat_name_y,threshold_for_prev =
 # Define which level of x to take as reference  x_levels <- sort(as.character(na.omit((unique(dat_df$x)))))
   x_levels <- sort(as.character(na.omit((unique(dat_df$x)))))
   lev_1_categories <- c("male", "1","N1","M1","L1","high", "multinodular", "Inflamed", "present", "Tumor", "viral_HCC", "ALD/ASH_HCC", "HBV_HCC","yes","responder","iCCA")
-  lev_2_categories <- c("all","Adj. non-tumor_CCC","Adj. non-tumor_CRLM","Adj. non-tumor_HCC","Adj. non-tumor")
+  lev_2_categories <- c("all","Adj. non-tumor_CCC","Adj. non-tumor_CRLM","Adj. non-tumor_HCC","Adj. non-tumor","EarlyFib","LateFib")
   if(any(x_levels %in% lev_1_categories)){
     lev1 <- x_levels[x_levels %in% lev_1_categories]
     lev2 <- x_levels[!(x_levels %in% lev_1_categories)]
@@ -345,7 +350,11 @@ f_lmer <- function(x,y,meta,formula,feat_name_x,feat_name_y,threshold_for_prev =
   } else{
     lev1 <- x_levels[1]
     lev2 <- x_levels[2]
-  }  
+  }
+  if(any(c(length(lev1) == 0, length(lev2) == 0))){ # If all x-levels are in the same category, just keep the default order
+    lev1 <- x_levels[1]
+    lev2 <- x_levels[2]
+  }
   df_merged$x <- factor(df_merged$x,levels = c(lev2,lev1))
   N_group1 <- nrow(subset(df_merged,x == lev2)) #mixup is on purpose
   N_group2 <- nrow(subset(df_merged,x == lev1))
@@ -550,8 +559,8 @@ f_single_run_fisher_test <- function(i, j, mat1, mat2, threshold_for_prev,preval
       } # break for loop after 1 iteration to not compute everything N times
     }
     group_levels <- rev(sort(unique(x_binary)))
-    lev_1_categories <- c("male", "1","N1","M1","L1","high", "multinodular", "Inflamed", "present", "Tumor", "viral_HCC", "ALD/ASH_HCC", "HBV_HCC","yes","responder","iCCA")
-    lev_2_categories <- c("all","Adj. non-tumor_CCC","Adj. non-tumor_CRLM","Adj. non-tumor_HCC","Adj. non-tumor")
+    lev_1_categories <- c("male", "1", "N1", "M1", "L1", "high", "multinodular", "Inflamed", "present", "Tumor", "viral_HCC", "ALD/ASH_HCC", "HBV_HCC", "yes", "responder", "iCCA")
+    lev_2_categories <- c("all", "Adj. non-tumor_CCC", "Adj. non-tumor_CRLM", "Adj. non-tumor_HCC", "Adj. non-tumor", "EarlyFib", "LateFib")    
     if (group_levels[1] %in% lev_1_categories | group_levels[2] %in% lev_2_categories) { # Make sure to re-order groups for consistency with lmem result
       group_levels <- rev(group_levels)
     }
