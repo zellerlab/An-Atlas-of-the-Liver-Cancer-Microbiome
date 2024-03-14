@@ -249,10 +249,6 @@ size_definition <- scale_size_continuous(
 man_y_breaks <- c(-log10(c(0.05,0.01,0.001,1e-4,1e-5)))
 
 # m: HCC vs iCCA
-#! Important note: In the manuscript the order of the levels in the volcano plot are swapped:
-#! HCC-enriched species are on the left (Enrichment effect size <1), iCCA enriched species are on the right (Enrichment effect size >1).
-#! Absolute values and p-values are identical so this is just a matter of visualization.
-
 # Check effect sizes and p-value ranges; define x- and y-limits for plotting
 plot_df <- test_res_cancer_df %>% filter(comparison == "HCC_vs_iCCA")
 range(plot_df$effect.size)
