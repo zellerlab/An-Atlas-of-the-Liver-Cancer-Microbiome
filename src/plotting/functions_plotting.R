@@ -479,3 +479,86 @@ f_prepare_barplot_plot_df <- function(tax, clin_feature, relAB_mat, meta_df) {
   
   return(bar_df %>% mutate(clin_feat_lab = as_factor(clin_feat_lab)))
 }
+
+f_create_upper_triangle_matrix <- function(named_vector,condition_levels) {
+  # takes a nemd vector with comparisons and returns a matrix with the comparisons in the upper triangle
+  # vector must be named and comparisons separated by "_vs_"
+  
+  # Extracting group names
+  groups <- unique(unlist(strsplit(names(named_vector), "_vs_")))
+  # Creating an empty matrix
+  p_matrix <- matrix(NA, nrow = length(groups), ncol = length(groups), dimnames = list(groups, groups))
+  # Populating the matrix
+  for (name in names(named_vector)) {
+    parts <- unlist(strsplit(name, "_vs_"))
+    p_matrix[parts[1], parts[2]] <- named_vector[name]
+    p_matrix[parts[2], parts[1]] <- named_vector[name] # for symmetry
+  }
+  p_matrix <- p_matrix[condition_levels, condition_levels]
+  p_matrix[lower.tri(p_matrix, diag = FALSE)] <- NA
+  return(p_matrix)
+}
+
+f_plot_signif_matrix <- function(upper_tri_matrix, condition_levels = NULL) {
+  # takes a matrix with correlation values and returns a heatmap colored by significane level
+
+  if (is.null(condition_levels)) {
+    condition_levels <- rownames(upper_tri_matrix)
+  }
+  sig_df <-
+    upper_tri_matrix %>%
+    as_tibble(rownames = "condition1") %>%
+    gather(-condition1, key = "condition2", value = value) %>%
+    mutate(
+      condition1 = factor(condition1, levels = (condition_levels)),
+      condition2 = factor(condition2, levels = rev(condition_levels))
+    ) %>%
+    mutate(p_sym = p_to_symbol(value))
+  
+  # define p-value legend
+  #! Make sure this matches the assigned p-values in the p_to_symbol function
+  p_val_legend <- c(
+    "***" = "q<0.001",
+    "**" = "q<0.01",
+    "*" = "q<0.1",
+    "n.s." = "q>=0.1"
+  )
+  p_val_colors <- c(
+    "***" = "black",
+    "**" = "#666666", # dark gray
+    "*" = "#AAAAAA", # light gray
+    "n.s." = "white"
+  )  
+  pt_sig_matrix <-
+    sig_df %>%
+    ggplot(aes(x = condition1, y = condition2)) +
+    theme_paper +
+    geom_tile(data = subset(sig_df, condition1 == condition2), color = NA, fill = NA) +
+    geom_tile(data = subset(sig_df, !(is.na(p_sym))), aes(fill = p_sym), color = "black", size = 0.5) +
+    scale_fill_manual(
+      values = p_val_colors, breaks = names(p_val_legend),
+      labels = p_val_legend,
+      limits = names(p_val_legend), na.value = "white"
+    )+
+    scale_x_discrete(position = "bottom", expand = c(0, 0)) +
+    scale_y_discrete(expand = c(0, 0)) +
+    geom_abline(slope = -1, intercept = length(condition_levels)+1, size = 0.75) +
+    theme(
+      axis.text.x = element_text(angle = 0, vjust = 1, hjust = 0.5, size = 8),
+      axis.text.y = element_text(angle = 0, vjust = 0.5, hjust = 1, size = 8),
+      axis.title.x = element_blank(),
+      axis.title.y = element_blank(),
+      legend.position = c(0.9, 1), legend.justification = c(1, 1),      
+      legend.text = element_text(size = 6), # Adjust legend text size
+      legend.title = element_blank(), # Adjust legend title size
+      legend.key.size = unit(0.3, "cm")
+    )     
+  return(pt_sig_matrix)
+}
+
+
+
+
+
+
+
