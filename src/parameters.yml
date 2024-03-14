@@ -21,6 +21,7 @@ plotting:
 
         Adj. non-tumor_iCCA: "#65d03d"
         Adj. non-tumor_CRLM: "#fef400"
+        Adj. non-tumor_HCC: "#CBA3D8"
 
         HBV_HCC: "#65d03d"
         HCV_HCC: "#0012fa"
@@ -28,6 +29,11 @@ plotting:
         MAFLD/MASH_HCC: "#ff6600"
         viral_HCC: "#00d989"
         non-viral_HCC: "#fa7c0c"
+
+        Liver fibrosis early stage: "#f9d75f"
+        Liver fibrosis late stage: "#f97a50"
+        Fibrosis early stage: "#f9d75f"
+        Fibrosis late stage: "#f97a50"
 
         TCGA: "#FFBB78"
         DKFZ: "#FF9896"
