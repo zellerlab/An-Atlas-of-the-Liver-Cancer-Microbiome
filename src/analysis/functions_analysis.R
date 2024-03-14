@@ -111,19 +111,19 @@ f_single_run_lm <- function(i, j, mat1, mat2, meta, random_effect_variable, cont
   x <- mat1[i, ]
   y <- mat2[j, ]
 
-  # Check prevalence if selected
-  if (prevalence_threshold != FALSE) {
-    if (sum(y > threshold_for_prev) / length(y) < prevalence_threshold) {
-      return(NULL)
-    }
-  }
-
   idx <- which(!(is.na(x)) & !(is.na(y)))
   if (length(idx) == 0) { # if no non-NA values are present, return NULL
     return(NULL)
   }
   x <- x[idx]
   y <- y[idx]
+
+  # Check prevalence if selected
+  if (prevalence_threshold != FALSE) {
+    if (sum(y > threshold_for_prev) / length(y) < prevalence_threshold) {
+      return(NULL)
+    }
+  }
 
   if (length(unique(x)) < 2) {
     return(NULL) # Returning NULL if condition is met
@@ -521,14 +521,6 @@ f_single_run_fisher_test <- function(i, j, mat1, mat2, threshold_for_prev,preval
   x <- mat1[i, ]  # Binary variable
   y <- mat2[j, ]  # Continuous variable
 
-  # Check prevalence if selected (based on all samples, not just the ones with an annotation for the current (clinical) feature)
-  if(prevalence_threshold != FALSE){
-    if(sum(y > threshold_for_prev) / length(y) < prevalence_threshold){
-      message("Prevalence too low")
-      return(NULL)      
-    }
-  }
-
   # remove NA samples for current clinical test
   idx <- which(!(is.na(x)) & !(is.na(y)))
   if(length(idx) == 0){ #if no non-NA values are present, return NULL
@@ -536,6 +528,14 @@ f_single_run_fisher_test <- function(i, j, mat1, mat2, threshold_for_prev,preval
   }
   x <- x[idx]
   y <- y[idx]
+
+  # Check prevalence if selected (based on all samples, not just the ones with an annotation for the current (clinical) feature)
+  if(prevalence_threshold != FALSE){
+    if(sum(y > threshold_for_prev) / length(y) < prevalence_threshold){
+      message("Prevalence too low")
+      return(NULL)      
+    }
+  }
   
   if (length(unique(x)) < 2) {
     return(NULL) # Returning NULL if condition is met
@@ -610,11 +610,12 @@ f_run_spearman <- function(dset_name = "all",mat1,mat2,prevalence_threshold = FA
       feat2 <- rownames(mat2)[j]
       x <- mat1[i,]
       y <- mat2[j, ]
-            
-      #! Attention: in previous code this step was performed before removing NAs --> maybe more parameters kept
-      # 240311: Moved prevalence filter before removing NAs for the current selection of features
-      # rational: Filtering should be performed on all available samples not just the ones that also have a clinical annotation
-      # (in order to have a consistent number of samples for most clinical features)
+
+      #keep only non-NAs
+      idx <- as.numeric(which(!(is.na(x)) & !(is.na(y))))
+      x <- as.numeric(x[idx])
+      y <- as.numeric(y[idx])
+      
       prevalence <- sum(y > threshold_for_prev) / length(y) 
 
       # Check prevalence if selected
@@ -624,12 +625,7 @@ f_run_spearman <- function(dset_name = "all",mat1,mat2,prevalence_threshold = FA
           next
         }
       }
-
-      #keep only non-NAs
-      idx <- as.numeric(which(!(is.na(x)) & !(is.na(y))))
-      x <- as.numeric(x[idx])
-      y <- as.numeric(y[idx])
-    
+          
       N_samples <- length(x)
       #do the spearman correlation
       tmp_df <- f_spearman(x = x, y = y, feat_name_x = feat1, feat_name_y = feat2) #%>%             
