@@ -76,10 +76,6 @@ comparison_name <- c("Fibrosis_to_HCC","ALD_vs_MAFLD_vs_HBV_vs_HCV")
 # define corresponding column in the metadata DF
 meta_group_columns <- c("Group_FibrosisComparison","Group_HCCsubtypes")
 
-c_comparison <- comparison_list[[i]]
-c_name <- comparison_name[i]
-c_meta_group_column <- meta_group_columns[i]
-i <- 1
 f_helper_plot_diversity <- function(c_comparison, c_name, c_meta_group_column) {
   # takes a comparison vector (e.g. c("early Fibrosis","late fibrosis,..")) and a comparison name (e.g. "Fibrosis_to_HCC"), 
   # generates a dataframe with richness and shannon diversities and computes PCoA and pulls the p-values from the alpha_beta_diversity_clean_df
@@ -128,7 +124,7 @@ f_helper_plot_diversity <- function(c_comparison, c_name, c_meta_group_column) {
     deframe()
   
   # generate matrix with p-values
-  tri_mat <- f_upper_tri_matrix_from_named_test_vector(p_adj_richness_vec, condition_levels = c_comparison)
+  tri_mat <- f_create_upper_triangle_matrix(p_adj_richness_vec, condition_levels = c_comparison)
   
   # For visualization: Update names in tri_mat wit line breaks
   rownames(tri_mat) <- str_replace_all(rownames(tri_mat), "fibrosis ","fibrosis\n")
@@ -167,7 +163,7 @@ f_helper_plot_diversity <- function(c_comparison, c_name, c_meta_group_column) {
     deframe()
   
   # generate matrix with p-values
-  tri_mat <- f_upper_tri_matrix_from_named_test_vector(p_adj_shannon_vec, condition_levels = c_comparison)
+  tri_mat <- f_create_upper_triangle_matrix(p_adj_shannon_vec, condition_levels = c_comparison)
   
   # For visualization: Update names in tri_mat wit line breaks
   rownames(tri_mat) <- str_replace_all(rownames(tri_mat), "fibrosis ","fibrosis\n")
@@ -202,7 +198,7 @@ f_helper_plot_diversity <- function(c_comparison, c_name, c_meta_group_column) {
     deframe()
   
   # generate matrix with p-values
-  tri_mat <- f_upper_tri_matrix_from_named_test_vector(p_adj_bray_vec, condition_levels = c_comparison)
+  tri_mat <- f_create_upper_triangle_matrix(p_adj_bray_vec, condition_levels = c_comparison)
   
   # For visualization: Update names in tri_mat wit line breaks
   rownames(tri_mat) <- str_replace_all(rownames(tri_mat), "fibrosis ","fibrosis\n")
@@ -219,18 +215,6 @@ f_helper_plot_diversity <- function(c_comparison, c_name, c_meta_group_column) {
 
   return(list(richness = pt_richness_merged, shannon = pt_shannon_merged, pcoa = pt_pcoa_merged))
 }
-
-#ggsave(pt_richness_merged,filename = file.path(save_fig_folder,"ExtendedDataFigure6),width = 4.5,height = 4.5)
-
-w <- 4.5
-h <- 4.5
-ggsave(pt_richness_merged,filename = "~/Desktop/tmpRichness.pdf",width = 4.5,height = 4.5)
-ggsave(pt_pcoa_merged,filename = "~/Desktop/tmpPCOA.pdf",width = 4.5,height = 4.5)
-width <- 6
-heigth <- 5
-
-str(pt_pcoa)
-
 comparison_list
 figure_indices <- c("A","B","C","G","H","I")
 meta_group_columns
@@ -238,6 +222,7 @@ i <- 1
 w <- 4.5
 h <- 4.5
 id <- 1
+i <- 1
 for(i in seq(1,length(comparison_list))){
   # loop through the comparisons and generate the plots
   res <- f_helper_plot_diversity(
@@ -275,7 +260,7 @@ plot_df <- all_test_results_df %>% filter(comparison == "Fibrosis_early_vs_HCC")
 plot_df$Group1 <- str_replace(plot_df$Group1,"EarlyFib","Fibrosis early stage")
 plot_df$Group2 <- str_replace(plot_df$Group2,"EarlyFib","Fibrosis early stage")
 range(plot_df$effect.size)
-xBreaks <- round(seq(-0.3,0.4,0.1),1)
+xBreaks <- round(seq(-0.4,0.3,0.1),1)
 xLims <- range(xBreaks)
 pt_D <- f_plot_volcano(
   plot_df = plot_df, xBreaks = xBreaks, xLims = xLims,
