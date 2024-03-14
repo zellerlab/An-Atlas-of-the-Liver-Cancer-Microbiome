@@ -60,9 +60,9 @@ tmp_df <- meta_all_df %>%
     test_Fibrosis_late_vs_early = case_when(Etiology == "Liver fibrosis late stage" ~ "LateFib", Etiology == "Liver fibrosis early stage" ~ "EarlyFib", TRUE ~ NA_character_),
 
     # BTC subtypes
-    test_iCCA_vs_phCCA_dCC = case_when(Etiology == "iCCA" ~ "iCCA", Etiology %in% c("phCCA", "dCC") ~ "phCCA_dCCA", TRUE ~ NA_character_),
+    test_iCCA_vs_phCCA_dCCA = case_when(Etiology == "iCCA" ~ "iCCA", Etiology %in% c("phCCA", "dCCA") ~ "phCCA_dCCA", TRUE ~ NA_character_),
     test_iCCA_vs_GBC = case_when(Etiology == "iCCA" ~ "iCCA", Etiology == "GBC" ~ "GBC", TRUE ~ NA_character_),
-    test_GBC_vs_phCCA_dCC = case_when(Etiology == "GBC" ~ "GBC", Etiology %in% c("phCCA", "dCC") ~ "phCCA_dCCA", TRUE ~ NA_character_),
+    test_GBC_vs_phCCA_dCCA = case_when(Etiology == "GBC" ~ "GBC", Etiology %in% c("phCCA", "dCCA") ~ "phCCA_dCCA", TRUE ~ NA_character_),
 
     # Tumor vs normal of adj
     test_Tumor_vs_Adj_iCCA = case_when(Etiology == "iCCA" ~ "iCCA", Etiology == "Adj. non-tumor_CCC" ~ "Adj. non-tumor_CCC", TRUE ~ NA_character_),
@@ -351,7 +351,7 @@ tmp_df <- meta_all_df %>%
     test_ALD_vs_MAFLD_vs_HBV_vs_HCV = case_when(Etiology %in% c("ALD/ASH_HCC", "MAFLD/MASH_HCC","HBV_HCC", "HCV_HCC") ~ Etiology, TRUE ~ NA_character_),
 
     # iCCA vs GBC vs phCCA_dCC
-    test_iCCA_GBC_vs_phCCA_dCC = case_when(Etiology %in% c("GBC","iCCA") ~ Etiology, Etiology %in% c("phCCA", "dCC") ~ "phCCA_dCCA", TRUE ~ NA_character_),
+    test_iCCA_GBC_vs_phCCA_dCCA = case_when(Etiology %in% c("GBC","iCCA") ~ Etiology, Etiology %in% c("phCCA", "dCCA") ~ "phCCA_dCCA", TRUE ~ NA_character_),
 
     # iCCA and CRLM vs Adj
     test_Tumor_vs_Adj_iCCA = case_when(Etiology == "iCCA" ~ "iCCA", Etiology == "Adj. non-tumor_CCC" ~ "Adj. non-tumor_CCC", TRUE ~ NA_character_),
@@ -536,5 +536,3 @@ alpha_beta_diversity_immuno_clean_df  <-
 # Save difersity comparisons
 write_tsv(alpha_beta_diversity_clean_df,file = here("data","results","5R16S_diversity_comparisons_df.tsv"))
 write_tsv(alpha_beta_diversity_immuno_clean_df,file = here("data","results","5R16S_ImmunotherapyCohort_diversity_comparisons_df.tsv"))
-
-
