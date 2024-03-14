@@ -253,6 +253,11 @@ f_run_clinical_testing <- function(dset_name = "all", cancer_type, clinical_all_
   # Subset rel. Abundance matrix
   Sample_IDs <- colnames(cont_feat_mat)
   tmp_log10_relAB_mat <- log10_species_relAbundance_mat[, Sample_IDs]
+
+  # Now do a prevalence filtering based on all samples in the current test cohort (e.g all HCC samples) - independent of the availability of clinnical parameters
+  prev <- rowSums(tmp_log10_relAB_mat > -5) / ncol(tmp_log10_relAB_mat) #-5 represents the pseudocount that was added befor log-trafo
+  tmp_log10_relAB_mat <- tmp_log10_relAB_mat[prev > 0.05,]
+  
   meta <- clinical_all_cancers_df %>% select(Sample_ID) %>% filter(Sample_ID %in% Sample_IDs) %>% mutate(rowN = Sample_ID) %>% column_to_rownames("rowN") %>% mutate(dummy = "dummy")
 
   stopifnot(colnames(cont_feat_mat)==colnames(cat_feat_mat))
@@ -263,12 +268,10 @@ f_run_clinical_testing <- function(dset_name = "all", cancer_type, clinical_all_
     f_run_spearman(
       mat1 = cont_feat_mat[,,drop=F],
       mat2 = tmp_log10_relAB_mat[,,drop=F],
-      prevalence_threshold = 0.05, # threshold for prevalence applied to the genera before testing
-      threshold_for_prev = -5 # Relative abundance threshold (log10-transformed) to consider a genus "prevalent
+      prevalence_threshold = FALSE, # no prevalence filtering since it was done for the entire cohort
     )  %>% group_by(feat1) %>% #* Important: Define how pvalues are controlled!
     mutate(p_adj = p.adjust(p_value, method = "fdr")) %>%
-    ungroup()
-
+    ungroup()  
 
   # run linear-models for categorical features
   message("Running linear models for categorical features")
@@ -279,22 +282,22 @@ f_run_clinical_testing <- function(dset_name = "all", cancer_type, clinical_all_
       mat2 = tmp_log10_relAB_mat,
       meta = meta,
       random_effect_variable = "dummy", # run without a random effect (basic linear models)
-      threshold_for_prev = -5,
-      prevalence_threshold = 0.05,
+      threshold_for_prev = -5, # still needed to get group-prevalences
+      prevalence_threshold = FALSE, # no filtering since it was done for the entire cohort
       n_cores_max = n_cores,
       compute_CI = FALSE) %>%  # Only use true if you really need it - it slows down the computation massively.     
     group_by(feat1_group) %>% # control for every comparison group to correctly account for tests with multiple levels (e.g. Child Pugh C vs all, Child Pugh B vs all, etc.)
     mutate(p_adj = p.adjust(p_value, method = "fdr")) %>%
     ungroup()
-  
+
   # Run Fisher's exact test for categorical features as well
   message("Running Fisher's exact test for categorical features")
   test_res_fisher_df <-
     f_run_fisher_test_parallel(
       mat1 = cat_feat_mat,
       mat2 = tmp_log10_relAB_mat,
-      threshold_for_prev = -5,
-      prevalence_threshold = 0.05,
+      threshold_for_prev = -5, # still needed to get group-prevalences
+      prevalence_threshold = FALSE,
       n_cores_max = n_cores) %>% # Only use true if you really need it - it slows down the computation massively.
     group_by(feat1_group) %>% # control for every comparison group to correctly account for tests with multiple levels (e.g. Child Pugh C vs all, Child Pugh B vs all, etc.)
     mutate(p_adj = p.adjust(p.val_fisher, method = "fdr")) %>%
