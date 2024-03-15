@@ -213,8 +213,6 @@ tmp_df$comparison_Dataset %>% unique() %>% sort()
 saveRDS(tmp_df,file = "./data/results/HCC-meta-analysis_result_df.rds")
 
 #* Compare shannon / richness / CPM /  across bulk RNA-Seq cohorts - from RAW PathSeq scores without batch-effect correction ----
-# meta_combined_df <- read_tsv(here("data","metadata","meta_combined_bulkRNAseq_5R16S.tsv"))
-# genus_RelAbundance_corrected_mat <- readRDS(here("data/processed/genus_relAbundance_BatchEffectCorrected.rds"))
 genus_counts_raw_mat <- readRDS(here("data","raw","rawScores_bulkRNAseq_genus.rds"))
 dim(genus_counts_raw_mat)
 meta_combined_df$Sample_ID %>% unique() %>% length()
@@ -316,6 +314,6 @@ table(dataset_diversity_res_df$Group1)
 table(batch_diversity_res_df$Group2)
 
 #save output of diversity analysis as tsv
-write_tsv(dataset_diversity_res_df,here("data","results","HCC-meta-analysis_diversity_comparisons_byDataset.tsv"))  
-write_tsv(batch_diversity_res_df,here("data","results","HCC-meta-analysis_diversity_comparisons_byBatch.tsv"))  
+write_tsv(dataset_diversity_res_df,here("data","results","HCC-meta-analysis_diversity_comparisons_byDataset.tsv"))
+write_tsv(batch_diversity_res_df,here("data","results","HCC-meta-analysis_diversity_comparisons_byBatch.tsv"))
 
