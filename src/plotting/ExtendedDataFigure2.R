@@ -16,7 +16,7 @@ parameters <- yaml::yaml.load_file(here("src", "parameters.yml"))
 group_colors <- unlist(parameters$plotting)
 
 # Define folder to store plots
-save_fig_folder <- here("figures","ExtendedDataFigures")
+save_fig_folder <- here("figures","ExtendedDataFigures","ExtendedDataFigure2")
 if(!dir.exists(save_fig_folder)){
   dir.create(save_fig_folder, recursive = TRUE)
 }
@@ -147,11 +147,11 @@ for(i in seq(1,length(comparison_list))){
   res <- f_helper_plot_diversity(c_comparison = comparison_list[[i]], c_name = comparison_name[i])
   
   # save the plots
-  ggsave(paste0(save_fig_folder,"/ExtendedDataFigure2",figure_indices[id],"_SpeciesRichness.pdf"), res$richness, width = w, height = h)
+  ggsave(paste0(save_fig_folder,"/",figure_indices[id],"_SpeciesRichness.pdf"), res$richness, width = w, height = h)
   id <- id + 1
-  ggsave(paste0(save_fig_folder,"/ExtendedDataFigure2",figure_indices[id],"_ShannonDiv.pdf"), res$shannon, width = w, height = h)
+  ggsave(paste0(save_fig_folder,"/",figure_indices[id],"_ShannonDiv.pdf"), res$shannon, width = w, height = h)
   id <- id + 1
-  ggsave(paste0(save_fig_folder,"/ExtendedDataFigure2",figure_indices[id],"_PCoA.pdf"), res$pcoa, width = 6, height = 5)
+  ggsave(paste0(save_fig_folder,"/",figure_indices[id],"_PCoA.pdf"), res$pcoa, width = 6, height = 5)
   id <- id + 1
 }
 
@@ -237,8 +237,8 @@ pt_N <- f_plot_volcano(
 # Save volcanos
 width_volcano <- 4.5
 height_volcano <- 5
-ggsave(paste0(save_fig_folder,"/ExtendedDataFigure2D_Volcano_iCCA_vs_Adj_iCCA.pdf"), pt_D, width = width_volcano, height = height_volcano)
-ggsave(paste0(save_fig_folder,"/ExtendedDataFigure2H_Volcano_CRLM_vs_Adj_CRLM.pdf"), pt_H, width = width_volcano, height = height_volcano)
-ggsave(paste0(save_fig_folder,"/ExtendedDataFigure2L_Volcano_iCCA_vs_phCCA_dCCA.pdf"), pt_L, width = width_volcano, height = height_volcano)
-ggsave(paste0(save_fig_folder,"/ExtendedDataFigure2M_Volcano_iCCA_vs_GBC.pdf"), pt_M, width = width_volcano, height = height_volcano)
-ggsave(paste0(save_fig_folder,"/ExtendedDataFigure2N_Volcano_GBC_vs_phCCA_dCCA.pdf"), pt_N, width = width_volcano, height = height_volcano)
+ggsave(paste0(save_fig_folder,"/D_Volcano_iCCA_vs_Adj_iCCA.pdf"), pt_D, width = width_volcano, height = height_volcano)
+ggsave(paste0(save_fig_folder,"/H_Volcano_CRLM_vs_Adj_CRLM.pdf"), pt_H, width = width_volcano, height = height_volcano)
+ggsave(paste0(save_fig_folder,"/L_Volcano_iCCA_vs_phCCA_dCCA.pdf"), pt_L, width = width_volcano, height = height_volcano)
+ggsave(paste0(save_fig_folder,"/M_Volcano_iCCA_vs_GBC.pdf"), pt_M, width = width_volcano, height = height_volcano)
+ggsave(paste0(save_fig_folder,"/N_Volcano_GBC_vs_phCCA_dCCA.pdf"), pt_N, width = width_volcano, height = height_volcano)

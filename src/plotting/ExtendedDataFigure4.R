@@ -14,7 +14,7 @@ library(patchwork)
 source(here("src","plotting","functions_plotting.R"))
 
 # Define folder to store plots
-save_fig_folder <- here("figures","ExtendedDataFigures")
+save_fig_folder <- here("figures","ExtendedDataFigures","ExtendedDataFigure4")
 if(!dir.exists(save_fig_folder)){
   dir.create(save_fig_folder, recursive = TRUE)
 }
@@ -219,7 +219,7 @@ pt_RNAseq <- bar_RNAseq_df %>%
 pt_bar_combined <- pt_16S + theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
   pt_RNAseq + theme(axis.title.y = element_blank(), axis.text.y = element_blank(), axis.ticks.y = element_blank()) +
   plot_layout(guides = "collect") & theme(legend.position = "bottom")
-ggsave(pt_bar_combined, filename = here(save_fig_folder,"ExtendedDataFigure4A_Barplot_5R16SvsBulkRNAseq_DKFZ.pdf"), width = 7, height = 10)
+ggsave(pt_bar_combined, filename = file.path(save_fig_folder,"A_Barplot_5R16SvsBulkRNAseq_DKFZ.pdf"), width = 7, height = 10)
 
 #* Panel B: Scatterplot of relative abundances of matched samples at phylum level ----
 # Compute pearson and spearman correlation
@@ -241,7 +241,7 @@ pt_scatter <- relAb_shared_filtered_df %>%
   labs(fill = "Phylum")+
   ggtitle("Phylum level relative abundances\nin matched DKFZ HCC samples (N=76)")
 
-ggsave(pt_scatter ,filename = here(save_fig_folder,"ExtendedDataFigure4B_Scatter_5R16SvsBulkRNAseq_DKFZ.pdf"), width = 5, height = 5)
+ggsave(pt_scatter ,filename = file.path(save_fig_folder,"B_Scatter_5R16SvsBulkRNAseq_DKFZ.pdf"), width = 5, height = 5)
 
 #* Panel C: Boxplots of matched samples grouped by phylum ----
 yBreaks <- seq(-4, 0, 1)
@@ -275,7 +275,7 @@ pt_box_RNAseq <-
 
 # Combine the two boxplots
 pt_box_combined <- (pt_box_16S+theme(axis.text.x = element_blank(),axis.ticks.x = element_blank())) / pt_box_RNAseq
-ggsave(pt_box_combined ,filename = here(save_fig_folder,"ExtendedDataFigure4C_Boxplot_5R16SvsBulkRNAseq_DKFZ.pdf"), width = 5, height = 5)
+ggsave(pt_box_combined ,filename = file.path(save_fig_folder,"C_Boxplot_5R16SvsBulkRNAseq_DKFZ.pdf"), width = 5, height = 5)
 
 
 #* Panel D: Pairsplot of genus level relative abundances for all datasets against each other ----
@@ -339,8 +339,8 @@ pt_pair_mean <- ggpairs(pairs_abundance_df, columns = 2:ncol(pairs_prev_df)) +
   theme(axis.text.x = element_text(angle = 90,hjust = 1,vjust = 0.5))
 
 # save plots
-ggsave(pt_pair_mean,filename = here(save_fig_folder,"ExtendedDataFigure4D_Pairsplot_MeanGenusAbundances.pdf"),width = 10,height = 10)
-ggsave(pt_pair_prev,filename = here(save_fig_folder,"ExtendedDataFigure4E_Pairsplot_GenusPrevalences.pdf"),width = 10,height = 10)
+ggsave(pt_pair_mean,filename = file.path(save_fig_folder,"D_Pairsplot_MeanGenusAbundances.pdf"),width = 10,height = 10)
+ggsave(pt_pair_prev,filename = file.path(save_fig_folder,"E_Pairsplot_GenusPrevalences.pdf"),width = 10,height = 10)
 
 
 

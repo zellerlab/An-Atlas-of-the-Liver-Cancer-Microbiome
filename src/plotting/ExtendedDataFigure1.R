@@ -16,7 +16,7 @@ parameters <- yaml::yaml.load_file(here("src", "parameters.yml"))
 group_colors <- unlist(parameters$plotting)
 
 # Define folder to store plots
-save_fig_folder <- here("figures","ExtendedDataFigures")
+save_fig_folder <- here("figures","ExtendedDataFigures","ExtendedDataFigure1")
 if(!dir.exists(save_fig_folder)){
   dir.create(save_fig_folder, recursive = TRUE)
 }
@@ -75,7 +75,7 @@ pt_H <- f_plot_volcano(
 
 w <- 4.5
 h <- 5 
-ggsave(pt_H, filename = file.path(save_fig_folder,"ExtendedDataFigure1H_Volcano_HCCiCCAvsCRLM.pdf"), width = w,height = h)
+ggsave(pt_H, filename = file.path(save_fig_folder,"H_Volcano_HCCiCCAvsCRLM.pdf"), width = w,height = h)
 
 #* G: PCoA of different cancer samples ----
 alpha_beta_diversity_clean_df <- read_tsv(here("data","results","5R16S_diversity_comparisons_df.tsv")) %>% filter(comparison == "HCC_vs_iCCA_vs_CRLM")
@@ -96,7 +96,7 @@ theme(legend.position = "none")+
 annotate("text", x = -Inf, y = -Inf, label = p_text, size = 3, color = "black",hjust = -0.1, vjust = -0.5)
 rowSums(species_relAbundance_mat > 0) %>% summary()
 
-ggsave(pt_G,filename = file.path(save_fig_folder,"ExtendedDataFigure1G_PCoA_HCCvsiCCAvsCRLM.pdf"), width = 6, height = 5)
+ggsave(pt_G,filename = file.path(save_fig_folder,"G_PCoA_HCCvsiCCAvsCRLM.pdf"), width = 6, height = 5)
 
 
 

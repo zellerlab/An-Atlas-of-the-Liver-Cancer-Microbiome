@@ -17,7 +17,7 @@ parameters <- yaml::yaml.load_file(here("src", "parameters.yml"))
 group_colors <- unlist(parameters$plotting)
 
 # Define folder to store plots
-save_fig_folder <- here("figures","ExtendedDataFigures")
+save_fig_folder <- here("figures","ExtendedDataFigures","ExtendedDataFigure6")
 if(!dir.exists(save_fig_folder)){
   dir.create(save_fig_folder, recursive = TRUE)
 }
@@ -222,7 +222,6 @@ i <- 1
 w <- 4.5
 h <- 4.5
 id <- 1
-i <- 1
 for(i in seq(1,length(comparison_list))){
   # loop through the comparisons and generate the plots
   res <- f_helper_plot_diversity(
@@ -231,11 +230,11 @@ for(i in seq(1,length(comparison_list))){
     c_meta_group_column = meta_group_columns[i]
   )  
   # save the plots
-  ggsave(paste0(save_fig_folder,"/ExtendedDataFigure6",figure_indices[id],"_SpeciesRichness.pdf"), res$richness, width = w, height = h)
+  ggsave(paste0(save_fig_folder,"/",figure_indices[id],"_SpeciesRichness.pdf"), res$richness, width = w, height = h)
   id <- id + 1
-  ggsave(paste0(save_fig_folder,"/ExtendedDataFigure6",figure_indices[id],"_ShannonDiv.pdf"), res$shannon, width = w, height = h)
+  ggsave(paste0(save_fig_folder,"/",figure_indices[id],"_ShannonDiv.pdf"), res$shannon, width = w, height = h)
   id <- id + 1
-  ggsave(paste0(save_fig_folder,"/ExtendedDataFigure6",figure_indices[id],"_PCoA.pdf"), res$pcoa, width = w, height = h)
+  ggsave(paste0(save_fig_folder,"/",figure_indices[id],"_PCoA.pdf"), res$pcoa, width = w, height = h)
   id <- id + 1
 }
 
@@ -339,10 +338,10 @@ pt_L <- f_plot_volcano(
 # Save volcano plots
 width_volcano <- 4.5
 height_volcano <- 5
-ggsave(paste0(save_fig_folder,"/ExtendedDataFigure6D_Volcano_earlyFib_vs_HCC.pdf"), pt_D, width = width_volcano, height = height_volcano)
-ggsave(paste0(save_fig_folder,"/ExtendedDataFigure6E_Volcano_lateFib_vs_HCC.pdf"), pt_E, width = width_volcano, height = height_volcano)
-ggsave(paste0(save_fig_folder,"/ExtendedDataFigure6F_Volcano_HCC_vs_AdjNonTumor.pdf"), pt_F, width = width_volcano, height = height_volcano)
-ggsave(paste0(save_fig_folder,"/ExtendedDataFigure6J_Volcano_Viral_vs_NonViral.pdf"), pt_J, width = width_volcano, height = height_volcano)
-ggsave(paste0(save_fig_folder,"/ExtendedDataFigure6K_Volcano_ALD_vs_MAFLD.pdf"), pt_K, width = width_volcano, height = height_volcano)
-ggsave(paste0(save_fig_folder,"/ExtendedDataFigure6L_Volcano_HBV_vs_HCV.pdf"), pt_L, width = width_volcano, height = height_volcano)
+ggsave(paste0(save_fig_folder,"/D_Volcano_earlyFib_vs_HCC.pdf"), pt_D, width = width_volcano, height = height_volcano)
+ggsave(paste0(save_fig_folder,"/E_Volcano_lateFib_vs_HCC.pdf"), pt_E, width = width_volcano, height = height_volcano)
+ggsave(paste0(save_fig_folder,"/F_Volcano_HCC_vs_AdjNonTumor.pdf"), pt_F, width = width_volcano, height = height_volcano)
+ggsave(paste0(save_fig_folder,"/J_Volcano_Viral_vs_NonViral.pdf"), pt_J, width = width_volcano, height = height_volcano)
+ggsave(paste0(save_fig_folder,"/K_Volcano_ALD_vs_MAFLD.pdf"), pt_K, width = width_volcano, height = height_volcano)
+ggsave(paste0(save_fig_folder,"/L_Volcano_HBV_vs_HCV.pdf"), pt_L, width = width_volcano, height = height_volcano)
 

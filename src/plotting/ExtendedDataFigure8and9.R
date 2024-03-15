@@ -18,7 +18,7 @@ parameters <- yaml::yaml.load_file(here("src", "parameters.yml"))
 group_colors <- unlist(parameters$plotting)
 
 # Define folder to store plots
-save_fig_folder <- here("figures","ExtendedDataFigures")
+save_fig_folder <- here("figures","ExtendedDataFigures","ExtendedDataFigure8and9")
 if(!dir.exists(save_fig_folder)){
   dir.create(save_fig_folder, recursive = TRUE)
 }
@@ -263,15 +263,15 @@ hmap_CRLM <- f_clin_assoc_heatmap(
 
 # Save the heatmaps
 # HCC
-pdf(file = file.path(save_fig_folder, "ExtendedDataFigure8A_Heatmap_ClinicalFeatureAssociationHCC.pdf"), width = 10, height = 7)
+pdf(file = file.path(save_fig_folder, "8A_Heatmap_ClinicalFeatureAssociationHCC.pdf"), width = 10, height = 7)
 draw(hmap_HCC)
 dev.off()
 # iCCA
-pdf(file = file.path(save_fig_folder, "ExtendedDataFigure9A_Heatmap_ClinicalFeatureAssociationiCCA.pdf"), width = 9, height = 5)
+pdf(file = file.path(save_fig_folder, "9A_Heatmap_ClinicalFeatureAssociationiCCA.pdf"), width = 9, height = 5)
 draw(hmap_iCCA)
 dev.off()
 # CRLM
-pdf(file = file.path(save_fig_folder, "ExtendedDataFigure9B_Heatmap_ClinicalFeatureAssociationCRLM.pdf"), width = 8, height = 4.5)
+pdf(file = file.path(save_fig_folder, "9B_Heatmap_ClinicalFeatureAssociationCRLM.pdf"), width = 8, height = 4.5)
 draw(hmap_CRLM)
 dev.off()
 
@@ -303,7 +303,7 @@ for(species in to_plot){
   pt <- f_kaplan_meier(survRes_Obj[[idx]]$survFit,species)
   
   # save the plot
-  out_name <- file.path(save_fig_folder,paste0("ExtendedDataFigure8",panel_number[p],"_KaplanMeier_",species,"_",dataset_name[p],".pdf"))
+  out_name <- file.path(save_fig_folder,paste0("8",panel_number[p],"_KaplanMeier_",species,"_",dataset_name[p],".pdf"))
   pdf(out_name, width = 4, height = 5)
   print(pt, newpage = FALSE)
   dev.off()

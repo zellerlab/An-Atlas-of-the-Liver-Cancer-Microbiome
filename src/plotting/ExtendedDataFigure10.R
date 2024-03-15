@@ -17,7 +17,7 @@ parameters <- yaml::yaml.load_file(here("src", "parameters.yml"))
 group_colors <- unlist(parameters$plotting)
 
 # Define folder to store plots
-save_fig_folder <- here("figures","ExtendedDataFigures")
+save_fig_folder <- here("figures","ExtendedDataFigures","ExtendedDataFigure10")
 if(!dir.exists(save_fig_folder)){
   dir.create(save_fig_folder, recursive = TRUE)
 }
@@ -90,7 +90,7 @@ for(i in seq(1,length(to_plot))){
   pt_list[[i]] <- p
 }
 pt_A <- wrap_plots(pt_list,nrow = 1)
-ggsave(pt_A,filename = file.path(save_fig_folder,"ExtendedDataFigure10A_Barplot_PrevalenceRespVsNonResp.pdf"),width = 14,height = 6)
+ggsave(pt_A,filename = file.path(save_fig_folder,"A_Barplot_PrevalenceRespVsNonResp.pdf"),width = 14,height = 6)
 
 
 #* B: Forest plot of Hazard ratios for the influence of species abundances on overall survival ----
@@ -160,4 +160,4 @@ pt_B <- plot_df %>%
   )
 
 # Note: No species has an FDR-significant HR in the immunotherapy cohort
-ggsave(pt_B,filename = file.path(save_fig_folder,"ExtendedDataFigure10B_ForestPlot_HazardRatioImmunotherapyCohort.pdf"),width = 6,height = 10,device=cairo_pdf)
+ggsave(pt_B,filename = file.path(save_fig_folder,"B_ForestPlot_HazardRatioImmunotherapyCohort.pdf"),width = 6,height = 10,device=cairo_pdf)
