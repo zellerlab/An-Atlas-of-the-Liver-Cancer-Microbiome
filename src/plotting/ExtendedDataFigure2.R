@@ -114,7 +114,7 @@ f_helper_plot_diversity <- function(c_comparison, c_name) {
     # Just use the ggsignif function for plotting the p-value symbols
     ggsignif::geom_signif(
       comparisons = c_comparison_list,
-      #annotations = p_to_symbol(p_adj_vec_shannon),
+      annotations = p_to_symbol(p_adj_vec_shannon),
       vjust = -0, step_increase = 0.075, textsize = 3
     )
 
@@ -136,6 +136,7 @@ f_helper_plot_diversity <- function(c_comparison, c_name) {
 
   return(list(richness = pt_richness, shannon = pt_shannon, pcoa = pt_pcoa))
 }
+
 i <- 1
 comparison_list
 figure_indices <- c("A","B","C","E","F","G","I","J","K")
@@ -145,7 +146,7 @@ h <- 4.5
 for(i in seq(1,length(comparison_list))){
   # loop through the comparisons and generate the plots
   res <- f_helper_plot_diversity(c_comparison = comparison_list[[i]], c_name = comparison_name[i])
-  
+
   # save the plots
   ggsave(paste0(save_fig_folder,"/",figure_indices[id],"_SpeciesRichness.pdf"), res$richness, width = w, height = h)
   id <- id + 1
@@ -178,7 +179,7 @@ pt_D <- f_plot_volcano(
   plot_df = plot_df, xBreaks = xBreaks, xLims = xLims,
   man_y_breaks = man_y_breaks
 ) +
-  scale_fill_manual(values = group_colors)+
+  scale_fill_manual(values = group_colors, drop = F)+
   size_definition
 
 # CRLM vs non-TUmor CRLM
@@ -190,7 +191,7 @@ pt_H <- f_plot_volcano(
   plot_df = plot_df, xBreaks = xBreaks, xLims = xLims,
   man_y_breaks = man_y_breaks
 ) +
-  scale_fill_manual(values = group_colors)+
+  scale_fill_manual(values = group_colors, drop = F)+
   size_definition
 
 
@@ -207,7 +208,7 @@ pt_L <- f_plot_volcano(
   plot_df = plot_df, xBreaks = xBreaks, xLims = xLims,
   man_y_breaks = man_y_breaks
 ) +
-  scale_fill_manual(values = group_colors)+
+  scale_fill_manual(values = group_colors, drop = F)+
   size_definition
 
 # iCCA vs GBC #! Note: Labels are swapped compard to the manuscript figure (iCCA is on the left in the manuscript). Values are all the same with swapped sign.
@@ -219,7 +220,7 @@ pt_M <- f_plot_volcano(
   plot_df = plot_df, xBreaks = xBreaks, xLims = xLims,
   man_y_breaks = man_y_breaks
 ) +
-  scale_fill_manual(values = group_colors)+
+  scale_fill_manual(values = group_colors, drop = F)+
   size_definition
 
 # GBC vs phCCA/dCCA #! Note: Labels are swapped compard to the manuscript figure (iCCA is on the left in the manuscript). Values are all the same with swapped sign.
@@ -230,7 +231,7 @@ xLims <- c(-0.51,1.1)
 pt_N <- f_plot_volcano(
   plot_df = plot_df, xBreaks = xBreaks, xLims = xLims,
   man_y_breaks = man_y_breaks) +
-  scale_fill_manual(values = group_colors)+
+  scale_fill_manual(values = group_colors, drop = F)+
   size_definition
 
 

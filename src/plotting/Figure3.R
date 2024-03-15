@@ -167,7 +167,7 @@ pt_B <- plot_df %>%
   scale_fill_manual(values = col_vec, labels = col_labs) +
   geom_hline(yintercept = -log10(0.05)) +
   # label highly significant genes of other pathways
-  ggrepel::geom_text_repel(data = plot_df %>% filter(pathway_association == "other", -log10(p.val_adj) > 8 | (effect.size > 0 & -log10(p.val_adj) > 6) | effect.size > 0.4), aes(label = gene), color = "darkgrey", size = 3)+
+  ggrepel::geom_text_repel(data = plot_df %>% filter(pathway_association == "other", -log10(p.val_adj) > 8 | (effect.size > 0 & -log10(p.val_adj) > 6) | effect.size > 0.4), aes(label = gene), color = "darkgrey", size = 3) +
 
   # label highly significant genes of inflammatory pathways and metabolic pathways
   ggrepel::geom_label_repel(data = plot_df %>% filter(pathway_association != "other", -log10(p.val_adj) > 2), aes(label = gene, fill = pathway_association), color = "black", alpha = 0.85, show.legend = F, size = 3) +
@@ -177,7 +177,13 @@ pt_B <- plot_df %>%
   ggtitle("Gene expression differnces depending on total bacterial load") +
   labs(fill = "") +
   ylab("-log10 q-value") +
-  xlab("Enrichment effect size")
+  xlab("Enrichment effect size") +
+  theme(
+    legend.title = element_blank(),
+    legend.position = c(1, 1),
+    legend.justification = c(1, 1),
+    legend.margin = margin(6, 6, 6, 6)
+  )
 
 ggsave(pt_B, filename = file.path(save_fig_folder, "B_Volcano_TotalBacteriaVSgeneExpression.pdf"), width = 7, height = 8)
 

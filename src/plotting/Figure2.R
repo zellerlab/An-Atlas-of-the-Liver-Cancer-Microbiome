@@ -108,7 +108,7 @@ pt_B <- meanAB_df %>%
   geom_abline(slope = 1, intercept = 0) +
   tune::coord_obs_pred() +
   theme_paper +
-  scale_fill_manual(values = phylum_colors_vec)+
+  scale_fill_manual(values = phylum_colors_df %>% dplyr::select(phylum,HEX) %>% deframe())+
   annotate("text",
     x = -5, y = 0, hjust = 0, vjust = 0.75, size = 3,
     # annotate("text", x = -2, y = -3.7, hjust = 0, vjust = 0.75,size = 3,

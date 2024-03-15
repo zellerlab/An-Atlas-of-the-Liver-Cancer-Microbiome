@@ -273,7 +273,7 @@ plot_df <- all_test_results_df %>% filter(comparison == "Fibrosis_late_vs_HCC")
 plot_df$Group1 <- str_replace(plot_df$Group1,"LateFib","Fibrosis late stage")
 plot_df$Group2 <- str_replace(plot_df$Group2,"LateFib","Fibrosis late stage")
 range(plot_df$effect.size)
-xBreaks <- round(seq(-0.8,0.3,0.1),1)
+xBreaks <- round(seq(-0.8,0.4,0.2),1)
 xLims <- range(xBreaks)
 pt_E <- f_plot_volcano(
   plot_df = plot_df, xBreaks = xBreaks, xLims = xLims,

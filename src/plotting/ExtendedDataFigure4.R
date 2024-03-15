@@ -275,7 +275,7 @@ pt_box_RNAseq <-
 
 # Combine the two boxplots
 pt_box_combined <- (pt_box_16S+theme(axis.text.x = element_blank(),axis.ticks.x = element_blank())) / pt_box_RNAseq
-ggsave(pt_box_combined ,filename = file.path(save_fig_folder,"C_Boxplot_5R16SvsBulkRNAseq_DKFZ.pdf"), width = 5, height = 5)
+ggsave(pt_box_combined ,filename = file.path(save_fig_folder,"C_Boxplot_5R16SvsBulkRNAseq_DKFZ.pdf"), width = 12, height = 8)
 
 
 #* Panel D: Pairsplot of genus level relative abundances for all datasets against each other ----
