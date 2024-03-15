@@ -116,7 +116,7 @@ stopifnot(rownames(meta_randomEff_df) == colnames(test_mat_genus_l10))
 #* Run the testing for total bacteria and inflammation status ----
 # If possible, run on a compute cluster since this consumes a lot of resources: 1 linear (mixed) model per gene and comparison
 nrow(test_mat1) * nrow(host_gene_expression_mat_l10)
-n_cores = 15
+n_cores = 16
 
 # Generate vector that indicates which rows in test_mat1 are continuous and which are categorical
 cont_or_cat_vec <- case_when(
@@ -177,7 +177,7 @@ saveRDS(test_res_sampleMetrics_clean_df, here("data","results","genes_vs_sampleM
 #*  Run the testing for every combination of genus abundance and gene expression ----
 
 nrow(test_mat_genus_l10) * nrow(host_gene_expression_mat_l10)
-n_cores = 12
+n_cores = 16
 
 # all genus rel. abundances are continuous
 cont_or_cat_vec_genus <- rep("continuous", nrow(test_mat_genus_l10))
