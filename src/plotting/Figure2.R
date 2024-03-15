@@ -30,36 +30,42 @@ test_result_df <- readRDS(here("data", "results", "HCC-meta-analysis_result_df.r
 meta_combined_df <- read_tsv(here("data","metadata","meta_combined_HCC-meta-analysis.tsv"))
 genus_RelAbundance_corrected_mat <- readRDS(here("data","processed","relAbundance_combined_genus_HCC-meta-analysis_BatchEffectCorrected.rds"))
 
-# get phylum names and define
-phylum_genus_df <- f_fetch_ncbi_taxonomy(tax_names = unique(test_result_df$tax)) %>%
-  dplyr::rename(genus = query_tax)
-  
-# The analysed genera are from the following phyla:
-unique(phylum_genus_df$phylum)
+phylum_colors_df_path <- here("data","processed","phylum_colors_df.tsv")
+# check if the phylum colors df exists, if not create it
+if (file.exists(phylum_colors_df_path)) {
+  phylum_colors_df <- read_tsv(phylum_colors_df_path)
+} else {
+  # generate the phylum colors df by fetching the genus from NCBI and assigning the phylum colors
+  phylum_genus_df <- f_fetch_ncbi_taxonomy(tax_names = unique(test_result_df$tax)) %>%
+    dplyr::rename(genus = query_tax)
 
-# rename the phylum to more common names
-phylum_genus_df <-
-  phylum_genus_df %>%
-  mutate(phylum = case_when(
-    phylum == "Actinomycetota" ~ "Actinobacteria",
-    phylum == "Pseudomonadota" ~ "Proteobacteria",
-    phylum == "Bacillota" ~ "Firmicutes",
-    phylum == "Bacteroidota" ~ "Bacteroidetes"
-  ))
+  # The analysed genera are from the following phyla:
+  unique(phylum_genus_df$phylum)
 
-phylum_colors_vec <- c("#009F4D", "#E40046","#307FE2", "#FFA300", "#8246AF", "#FFCD00", "#A8C700", "#BE5400", "#A8A99E")
-names <- c(
-  "Proteobacteria", "Actinobacteria", "Firmicutes", "Bacteroidetes",
-  "Cyanobacteria", "Fusobacteria", "Acidobacteria", "Verrucomicrobia", "other"
-)
-names(phylum_colors_vec) <- names
+  # rename the phylum to more common names
+  phylum_genus_df <-
+    phylum_genus_df %>%
+    mutate(phylum = case_when(
+      phylum == "Actinomycetota" ~ "Actinobacteria",
+      phylum == "Pseudomonadota" ~ "Proteobacteria",
+      phylum == "Bacillota" ~ "Firmicutes",
+      phylum == "Bacteroidota" ~ "Bacteroidetes"
+    ))
 
-# Add the colors to the phylum_genus_df
-phylum_colors_df <- phylum_genus_df %>%
-  dplyr::select(phylum, genus) %>%
-  distinct() %>% 
-  left_join(., phylum_colors_vec %>% enframe(name = "phylum", value = "HEX"))
+  phylum_colors_vec <- c("#009F4D", "#E40046", "#307FE2", "#FFA300", "#8246AF", "#FFCD00", "#A8C700", "#BE5400", "#A8A99E")
+  names <- c(
+    "Proteobacteria", "Actinobacteria", "Firmicutes", "Bacteroidetes",
+    "Cyanobacteria", "Fusobacteria", "Acidobacteria", "Verrucomicrobia", "other"
+  )
+  names(phylum_colors_vec) <- names
 
+  # Add the colors to the phylum_genus_df
+  phylum_colors_df <- phylum_genus_df %>%
+    dplyr::select(phylum, genus) %>%
+    distinct() %>%
+    left_join(., phylum_colors_vec %>% enframe(name = "phylum", value = "HEX"))
+  write_tsv(phylum_colors_df, here("data", "processed", "phylum_colors_df.tsv"))
+}
 
 #*2B: Scatterplot of mean relative abudnances in bulk RNA-seq datasets and 5R16S seq datasets ----
 threshold_for_prev_RNAseq <- 1e-3 #relative abundance in the RNA-Seq cohort for which a genus is considered prevalent
@@ -170,7 +176,6 @@ pt_F <- f_plot_volcano(
   scale_fill_manual(values = group_colors) +
   size_definition
 
-ggsave(pt_M, filename = file.path(save_fig_folder,"M_Volcano_HCCvsiCCA.pdf"), width = w,height = h)
 
 # Plot volcanos
 w <- 4.5

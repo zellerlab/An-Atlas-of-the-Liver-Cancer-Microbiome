@@ -251,36 +251,45 @@ color_mapping <- circlize::colorRamp2(col_range, c("dodgerblue", "white", "tomat
 #1) Indicate phylum to which the genus belongs
 #2) Indicate the enrichment of the genus in HCC tumor tissue or adj. non-tumor
 
-# Phylum annotation
-# fetch phylum information for the genera
-phylum_genus_df <- f_fetch_ncbi_taxonomy(tax_names = unique(plot_df$genus)) %>%
-  dplyr::rename(genus = query_tax)
-  
-# The analysed genera are from the following phyla:
-phylum_genus_df$phylum %>% unique()
-# rename the phylum to more common names
-phylum_genus_df <-
-  phylum_genus_df %>%
-  mutate(phylum = case_when(
-    phylum == "Actinomycetota" ~ "Actinobacteria",
-    phylum == "Pseudomonadota" ~ "Proteobacteria",
-    phylum == "Bacillota" ~ "Firmicutes",
-    phylum == "Bacteroidota" ~ "Bacteroidetes"
-  )) %>% 
-  dplyr::select(genus, phylum)
-phylum_colors_vec <- c("#009F4D", "#E40046","#307FE2", "#FFA300", "#8246AF", "#FFCD00", "#A8C700", "#BE5400", "#A8A99E")
-names <- c(
-  "Proteobacteria", "Actinobacteria", "Firmicutes", "Bacteroidetes",
-  "Cyanobacteria", "Fusobacteria", "Acidobacteria", "Verrucomicrobia", "other"
-)
-names(phylum_colors_vec) <- names
-phylum_colors_df <- phylum_genus_df %>%
-  distinct() %>% 
-  left_join(., phylum_colors_vec %>% enframe(name = "phylum", value = "HEX"))
-write_tsv(phylum_colors_df,here("data","processed","phylum_colors_df.tsv"))
+phylum_colors_df_path <- here("data","processed","phylum_colors_df.tsv")
+# check if the phylum colors df exists, if not create it
+if (file.exists(phylum_colors_df_path)) {
+  phylum_colors_df <- read_tsv(phylum_colors_df_path)
+} else {
+  # generate the phylum colors df by fetching the genus from NCBI and assigning the phylum colors
+  phylum_genus_df <- f_fetch_ncbi_taxonomy(tax_names = unique(test_result_df$tax)) %>%
+    dplyr::rename(genus = query_tax)
+
+  # The analysed genera are from the following phyla:
+  unique(phylum_genus_df$phylum)
+
+  # rename the phylum to more common names
+  phylum_genus_df <-
+    phylum_genus_df %>%
+    mutate(phylum = case_when(
+      phylum == "Actinomycetota" ~ "Actinobacteria",
+      phylum == "Pseudomonadota" ~ "Proteobacteria",
+      phylum == "Bacillota" ~ "Firmicutes",
+      phylum == "Bacteroidota" ~ "Bacteroidetes"
+    ))
+
+  phylum_colors_vec <- c("#009F4D", "#E40046", "#307FE2", "#FFA300", "#8246AF", "#FFCD00", "#A8C700", "#BE5400", "#A8A99E")
+  names <- c(
+    "Proteobacteria", "Actinobacteria", "Firmicutes", "Bacteroidetes",
+    "Cyanobacteria", "Fusobacteria", "Acidobacteria", "Verrucomicrobia", "other"
+  )
+  names(phylum_colors_vec) <- names
+
+  # Add the colors to the phylum_genus_df
+  phylum_colors_df <- phylum_genus_df %>%
+    dplyr::select(phylum, genus) %>%
+    distinct() %>%
+    left_join(., phylum_colors_vec %>% enframe(name = "phylum", value = "HEX"))
+  write_tsv(phylum_colors_df, here("data", "processed", "phylum_colors_df.tsv"))
+}
 
 # generate the annotation vector
-anno_vec_phylum <- phylum_genus_df$phylum[match(column_levels, phylum_genus_df$genus)]
+anno_vec_phylum <- phylum_colors_df$phylum[match(column_levels, phylum_colors_df$genus)]
 
 # Annotation of HCC association
 HCC_assoc_df <- test_result_HCC_MetaAnalysis_df %>%

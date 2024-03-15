@@ -47,14 +47,13 @@ total_bact_counts_df <- genus_counts_raw_mat[, meta_test_df$Sample_ID] %>%
   colSums() %>%
   enframe(name = "Sample_ID", value = "Bacteria_total") %>%
   left_join(., meta_test_df %>% dplyr::select(Sample_ID, FastQ_libsize)) %>%
-  mutate(`Total bacteria (CPM)` = Bacteria_total / FastQ_libsize * 1e6)
+  mutate(`Total bacteria [CPM]` = Bacteria_total / FastQ_libsize * 1e6)
 
 
 # Import test resluts of celltype abundances vs genus abundances
 test_results_celltypes_genera_df <- readRDS(here("data","results","celltypeProportion_vs_bacteria.rds")) %>% 
-  mutate(genus = ifelse(genus == "Bacteria_CPM", "Total bacteria [CPM]", genus))
+  mutate(genus = ifelse(genus == "Total bacteria (CPM)", "Total bacteria [CPM]", genus))
 test_result_HCC_MetaAnalysis_df <- readRDS(here("data", "results", "HCC-meta-analysis_result_df.rds")) %>% filter(comparison == "Tumor_vs_Adj",Dataset == "Meta-analysis")
-
 
 
 #* A: Heatmap of associations between bacterial features (genus abundances, total bacteria, Shannon div. and richness) and celltype proportions ----
@@ -88,7 +87,7 @@ row_levels <- rownames(mat_p) # keep all celltypes
 bac_diversity_features <- c("Total bacteria [CPM]", "Shannon diversity", "Genus richness")
 
 # Group the bacterial features for splitting the matrix columns
-column_split_vec <- ifelse(column_levels %in% bac_diversity_features, "A", "B")
+column_split_vec <- ifelse(column_levels %in% bac_diversity_features, "B", "A")
 
 # Reorder matrices
 mat_effect_size <- mat_effect_size[row_levels,column_levels]
@@ -112,36 +111,45 @@ color_mapping <- circlize::colorRamp2(col_range, c("dodgerblue", "white", "tomat
 #2) Indicate the enrichment of the genus in HCC tumor tissue or adj. non-tumor
 
 # Phylum annotation
-# fetch phylum information for the genera
+phylum_colors_df_path <- here("data","processed","phylum_colors_df.tsv")
+# check if the phylum colors df exists, if not create it
+if (file.exists(phylum_colors_df_path)) {
+  phylum_colors_df <- read_tsv(phylum_colors_df_path)
+} else {
+  # generate the phylum colors df by fetching the genus from NCBI and assigning the phylum colors
+  phylum_genus_df <- f_fetch_ncbi_taxonomy(tax_names = unique(test_result_df$tax)) %>%
+    dplyr::rename(genus = query_tax)
 
-phylum_genus_df <- f_fetch_ncbi_taxonomy(tax_names = unique(column_levels)) %>%
-  dplyr::rename(genus = query_tax)
-  
-# The analysed genera are from the following phyla:
-phylum_genus_df$phylum %>% unique()
-# rename the phylum to more common names
-phylum_genus_df <-
-  phylum_genus_df %>%
-  mutate(phylum = case_when(
-    phylum == "Actinomycetota" ~ "Actinobacteria",
-    phylum == "Pseudomonadota" ~ "Proteobacteria",
-    phylum == "Bacillota" ~ "Firmicutes",
-    phylum == "Bacteroidota" ~ "Bacteroidetes"
-  )) %>% 
-  dplyr::select(genus, phylum)
-phylum_colors_vec <- c("#009F4D", "#E40046","#307FE2", "#FFA300", "#8246AF", "#FFCD00", "#A8C700", "#BE5400", "#A8A99E")
-names <- c(
-  "Proteobacteria", "Actinobacteria", "Firmicutes", "Bacteroidetes",
-  "Cyanobacteria", "Fusobacteria", "Acidobacteria", "Verrucomicrobia", "other"
-)
-names(phylum_colors_vec) <- names
-phylum_colors_df <- phylum_genus_df %>%
-  distinct() %>% 
-  left_join(., phylum_colors_vec %>% enframe(name = "phylum", value = "HEX")) %>% 
-  filter(!is.na(HEX))
+  # The analysed genera are from the following phyla:
+  unique(phylum_genus_df$phylum)
+
+  # rename the phylum to more common names
+  phylum_genus_df <-
+    phylum_genus_df %>%
+    mutate(phylum = case_when(
+      phylum == "Actinomycetota" ~ "Actinobacteria",
+      phylum == "Pseudomonadota" ~ "Proteobacteria",
+      phylum == "Bacillota" ~ "Firmicutes",
+      phylum == "Bacteroidota" ~ "Bacteroidetes"
+    ))
+
+  phylum_colors_vec <- c("#009F4D", "#E40046", "#307FE2", "#FFA300", "#8246AF", "#FFCD00", "#A8C700", "#BE5400", "#A8A99E")
+  names <- c(
+    "Proteobacteria", "Actinobacteria", "Firmicutes", "Bacteroidetes",
+    "Cyanobacteria", "Fusobacteria", "Acidobacteria", "Verrucomicrobia", "other"
+  )
+  names(phylum_colors_vec) <- names
+
+  # Add the colors to the phylum_genus_df
+  phylum_colors_df <- phylum_genus_df %>%
+    dplyr::select(phylum, genus) %>%
+    distinct() %>%
+    left_join(., phylum_colors_vec %>% enframe(name = "phylum", value = "HEX"))
+  write_tsv(phylum_colors_df, here("data", "processed", "phylum_colors_df.tsv"))
+}
 
 # generate the annotation vector
-anno_vec_phylum <- phylum_genus_df$phylum[match(column_levels, phylum_genus_df$genus)]
+anno_vec_phylum <- phylum_colors_df$phylum[match(column_levels, phylum_colors_df$genus)]
 
 # Annotation of HCC association
 HCC_assoc_df <- test_result_HCC_MetaAnalysis_df %>%
@@ -200,7 +208,7 @@ hm <- ComplexHeatmap::Heatmap(mat_effect_size_rescaled,
   column_names_rot = 45, column_names_side = "bottom", column_names_centered = F,
   column_names_gp = gpar(fontsize = 8),
   column_labels = colLabs,
-  column_split = column_split_vec, # indicate whether to which group the feature belongs
+  column_split = factor(column_split_vec,levels = c("B","A")), # indicate whether to which group the feature belongs
 
   # Row style
   row_dend_side = "left",
@@ -237,7 +245,7 @@ hm <- ComplexHeatmap::Heatmap(mat_effect_size_rescaled,
 
 pt_A <- draw(hm,annotation_legend_list = leg_combined,heatmap_legend_side = "right", annotation_legend_side = "right")
 pdf(file = file.path(save_fig_folder, "A_Heatmap_CelltypeProportionsGenusAbundance.pdf"), width = 12, height = 4)
-pt_A
+draw(hm,annotation_legend_list = leg_combined,heatmap_legend_side = "right", annotation_legend_side = "right")
 dev.off()
 
 
@@ -357,9 +365,9 @@ for(i in seq(1,length(genus_selection_vec))){
 
 # generate matrix with total bacterial load
 bac_cpm_mat <- total_bact_counts_df %>%
-  dplyr::select(Sample_ID, `Total bacteria (CPM)`) %>%
+  dplyr::select(Sample_ID, `Total bacteria [CPM]`) %>%
   mutate(rowN = "Total bacteria [CPM]") %>%
-  pivot_wider(names_from = Sample_ID, values_from = `Total bacteria (CPM)`) %>%
+  pivot_wider(names_from = Sample_ID, values_from = `Total bacteria [CPM]`) %>%
   column_to_rownames("rowN") %>%
   as.matrix(drop = F)
 
