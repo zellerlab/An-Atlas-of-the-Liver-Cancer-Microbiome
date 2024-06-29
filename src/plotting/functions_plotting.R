@@ -21,6 +21,21 @@ theme_paper <- ggembl::theme_presentation() +
         axis.text = element_text(face = "bold", size = 12),
     )
 
+leg_inside <-
+    theme(
+        legend.title = element_blank(),
+        legend.position = c(-0, 0),
+        # legend.background = element_rect(color = "black", size = 0.5),
+        legend.justification = c(0, 0),
+        legend.margin = margin(6, 6, 6, 6))
+leg_inside_tr <-
+    theme(
+        legend.title = element_blank(),
+        legend.position = c(1, 1),
+        # legend.background = element_rect(color = "black", size = 0.5),
+        legend.justification = c(1, 1),
+        legend.margin = margin(6, 6, 6, 6))
+
 f_create_label  <- function(name_vec){
     # Takes taxon strings as input and returns a cleaned label (e.g. s_Acinetobacter unknown species 1 -> Acinetobacter sp. [US1])
     require(dplyr)
