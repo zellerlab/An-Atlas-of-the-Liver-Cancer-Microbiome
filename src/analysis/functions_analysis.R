@@ -20,6 +20,7 @@ f_run_linear_models_parallel <- function(
   # Initialization and checks
   stopifnot(all(colnames(mat1) == colnames(mat2)))
   stopifnot(random_effect_variable %in% colnames(meta))
+  stopifnot(is.matrix(mat1) & is.matrix(mat2))
 
   #if no cont_or_cat vector is given, assume binary features in mat1
   if(is.null(cont_or_cat_vec)){
@@ -97,7 +98,7 @@ f_run_linear_models_parallel <- function(
 # for(i in seq(1,nrow(mat1))){
 #   for(j in seq(1,nrow(mat2))){
 #     message("i:",i," j:",j)
-#     tmp <- f_single_run_lm(i,j,mat1,mat2,meta_randomEff_df,random_effect_variable,cont_or_cat_vec)
+#     tmp <- f_single_run_lm(i,j,mat1,mat2,meta,random_effect_variable,cont_or_cat_vec)
 #   }
 # }
 
@@ -220,7 +221,7 @@ f_lm <- function(x,y,meta,feat_name_x,feat_name_y,threshold_for_prev = -3,comput
   # Define which level of x to take as reference
   x_levels <- sort(as.character(na.omit((unique(dat_df$x)))))
   lev_1_categories <- c("male", "1","N1","M1","L1","high", "multinodular", "Inflamed", "present", "Tumor", "viral_HCC", "ALD/ASH_HCC", "HBV_HCC","yes","responder","iCCA","CRLM")
-  lev_2_categories <- c("all","Adj. non-tumor_CCC","Adj. non-tumor_CRLM","Adj. non-tumor_HCC","Adj. non-tumor","EarlyFib","LateFib")
+  lev_2_categories <- c("all","Adj. non-tumor_CCC","Adj. non-tumor_CRLM","Adj. non-tumor_HCC","Adj. non-tumor","EarlyFib","LateFib","0")
   if(any(x_levels %in% lev_1_categories)){
     lev1 <- x_levels[x_levels %in% lev_1_categories]
     lev2 <- x_levels[!(x_levels %in% lev_1_categories)]
@@ -340,7 +341,7 @@ f_lmer <- function(x,y,meta,formula,feat_name_x,feat_name_y,threshold_for_prev =
 # Define which level of x to take as reference  x_levels <- sort(as.character(na.omit((unique(dat_df$x)))))
   x_levels <- sort(as.character(na.omit((unique(dat_df$x)))))
   lev_1_categories <- c("male", "1","N1","M1","L1","high", "multinodular", "Inflamed", "present", "Tumor", "viral_HCC", "ALD/ASH_HCC", "HBV_HCC","yes","responder","iCCA","CRLM")
-  lev_2_categories <- c("all","Adj. non-tumor_CCC","Adj. non-tumor_CRLM","Adj. non-tumor_HCC","Adj. non-tumor","EarlyFib","LateFib")
+  lev_2_categories <- c("all","Adj. non-tumor_CCC","Adj. non-tumor_CRLM","Adj. non-tumor_HCC","Adj. non-tumor","EarlyFib","LateFib","0")
   if(any(x_levels %in% lev_1_categories)){
     lev1 <- x_levels[x_levels %in% lev_1_categories]
     lev2 <- x_levels[!(x_levels %in% lev_1_categories)]
@@ -560,7 +561,7 @@ f_single_run_fisher_test <- function(i, j, mat1, mat2, threshold_for_prev,preval
     }
     group_levels <- rev(sort(unique(x_binary)))
     lev_1_categories <- c("male", "1","N1","M1","L1","high", "multinodular", "Inflamed", "present", "Tumor", "viral_HCC", "ALD/ASH_HCC", "HBV_HCC","yes","responder","iCCA","CRLM")
-    lev_2_categories <- c("all", "Adj. non-tumor_CCC", "Adj. non-tumor_CRLM", "Adj. non-tumor_HCC", "Adj. non-tumor", "EarlyFib", "LateFib")    
+    lev_2_categories <- c("all", "Adj. non-tumor_CCC", "Adj. non-tumor_CRLM", "Adj. non-tumor_HCC", "Adj. non-tumor", "EarlyFib", "LateFib", "0")    
     if (group_levels[1] %in% lev_1_categories | group_levels[2] %in% lev_2_categories) { # Make sure to re-order groups for consistency with lmem result
       group_levels <- rev(group_levels)
     }
@@ -736,4 +737,58 @@ f_compute_distance_metrics <- function(df,relAB_mat,threshold_for_prevalence = 0
 
 }
 
+f_save_to_excel <- function(res_list,out_name,column_groups=list(group1 = 5:9, group2 = 10:12, group3 = 13:16)){
+  require(openxlsx)
+  # color code columns:
+  # 5-9: lm
+  # 10-12: wilcox
+  # 13-16: fisher
+  
+  # Define your colors
+  colors <-  c(group1 = "#ADD8E6", group2 = "#98FB98", group3 = "#F08080", group4 = "#FFFFE0",group5 = "#FFB6C1")
+
+  
+  # Define your column groups
+  #column_groups <- list(group1 = 5:9, group2 = 10:12, group3 = 13:16)
+  
+  # Create a new workbook
+  wb <- createWorkbook()
+  
+  # Loop through each element in the list
+  for(i in seq_along(res_list)) {
+    sheetName <- substr(names(res_list)[i], start = 1, stop = 30)
+    sheetName <- str_replace_all(sheetName,pattern = "\\/",replacement = "-")
+    # Add a worksheet to the workbook for the current dataframe
+    addWorksheet(wb, sheetName = sheetName)
+    
+      # Write the dataframe to the worksheet    
+    writeData(wb, sheet = sheetName, x = res_list[[i]])
+    
+    # Add color to specific columns
+    for(group_name in names(column_groups)) {
+      # Create the style
+      sty <- createStyle(fgFill = colors[group_name])
+      
+      # Get the column indices
+      col_indices <- column_groups[[group_name]]
+      
+      # Add the style to each column in the group, excluding the header (row 1)
+      for (col_index in col_indices) {
+        addStyle(wb, sheet = sheetName, style = sty, rows = 1:(nrow(res_list[[i]]) + 1), cols = col_index)
+      }
+    }
+    
+    
+    # Set column width to 'auto' for each column in the worksheet
+    setColWidths(wb, sheet = sheetName, cols = 1:ncol(res_list[[i]]),widths = "auto")
+    # Add filters to the column headers
+    addFilter(wb, sheet = sheetName, cols = 1:ncol(res_list[[i]]),rows = 1)
+    
+    
+    
+  }
+  
+  # Save the workbook
+  saveWorkbook(wb, out_name, overwrite = TRUE)
+}
 
