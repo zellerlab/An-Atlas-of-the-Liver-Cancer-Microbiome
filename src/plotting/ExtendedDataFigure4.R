@@ -36,6 +36,7 @@ meta_shared_df <- inner_join(
   filter(Tissue_type == "Tumor") %>%
     transmute(Sample_ID_RNAseq = Sample_ID, Patient_ID),
   meta_16S_all_samples_df %>%
+      filter(!str_detect(Etiology,"non-tumor")) %>%
     transmute(Sample_ID_5R16S = Sample_ID, Patient_ID)
 )
 
